@@ -1,0 +1,3 @@
+./authentication-service/.env
+./orders-service/.env
+./products-service/.env
