@@ -5,11 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Repository struct {
@@ -19,41 +22,78 @@ func initRepository() *Repository {
 	return &Repository{}
 }
 
+var itemsPerPage int64 = 10
+
 // GET PRODUCTS
-func (x *Repository) getProducts() ([]*GetProduct, error) {
+func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 	var products []*GetProduct
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := collection.Find(context.Background(), bson.M{})
+	filter := bson.M{
+		"$expr": bson.M{
+			"$gt": bson.A{
+				bson.M{"$strLenCP": "$name"},
+				0,
+			},
+		},
+	}
+
+	//check total count is equal to page
+	totalCount, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
-		return []*GetProduct{}, err
+		return []*GetProduct{}, &PageInfo{}, err
+	}
+	//check page
+	page = repo.checkPage(page, totalCount)
+
+	//
+	cursor, err := collection.Find(context.Background(), filter, options.Find().SetSkip(int64((page-1)*itemsPerPage)).SetLimit(int64(itemsPerPage)))
+	if err != nil {
+		return []*GetProduct{}, &PageInfo{}, err
 	}
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var product *GetProduct
+		var product *GetProductBSON
 		if err := cursor.Decode(&product); err != nil {
-			fmt.Println(cursor)
-			fmt.Println(err)
-			return products, errors.New("something went wrong while cursor the item")
+			fmt.Println("error?")
+			return products, &PageInfo{}, err
 		}
-		products = append(products, product)
+		uuidFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
+		if err != nil {
+			return []*GetProduct{}, &PageInfo{}, err
+		}
+		products = append(products, &GetProduct{
+			ID:      product.ID,
+			Name:    product.Name,
+			Brand:   product.Brand,
+			Content: product.Content,
+			Price:   product.Price,
+			// is true?
+			AddedBy: uuidFromBinary,
+		})
 	}
 
 	if err := cursor.Err(); err != nil {
 		log.Fatal(err)
 	}
-	//filters?
-	//pagination?
-	return products, nil
+
+	//pageInfos
+	pageInfos := &PageInfo{
+		TotalPage:         int(totalCount)/10 + 1,
+		CurrentPage:       int(page),
+		TotalProductCount: int(totalCount),
+	}
+	return products, pageInfos, nil
 
 }
 
+// !
 // GET SINGLE PRODUCT
 func (x *Repository) getSingleProduct(id primitive.ObjectID) (*GetProduct, error) {
-	var product *GetProduct
+	var product *GetProductBSON
 	//context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -62,14 +102,25 @@ func (x *Repository) getSingleProduct(id primitive.ObjectID) (*GetProduct, error
 	filter := bson.M{"_id": id}
 
 	err := collection.FindOne(ctx, filter).Decode(&product)
-	fmt.Println("product is", product)
 	if err != nil {
-		return product, err
+		return &GetProduct{}, err
 	}
 	if err == mongo.ErrNoDocuments {
-		return product, errors.New("Invalid id")
+		return &GetProduct{}, errors.New("invalid id")
 	}
-	return product, nil
+
+	userIDFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
+	if err != nil {
+		return &GetProduct{}, err
+	}
+	return &GetProduct{
+		ID:      product.ID,
+		Name:    product.Name,
+		Brand:   product.Brand,
+		Content: product.Content,
+		Price:   product.Price,
+		AddedBy: userIDFromBinary,
+	}, nil
 
 }
 
@@ -78,54 +129,93 @@ func (x *Repository) addProduct(newProduct *NewProduct) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
+	productInfoBson := NewProductBSON{
+		Name:    newProduct.Name,
+		Brand:   newProduct.Brand,
+		Content: newProduct.Content,
+		Price:   newProduct.Price,
+		AddedBy: primitive.Binary{Subtype: 4, Data: newProduct.AddedBy[:]},
+	}
+
 	//query
-	result, err := collection.InsertOne(ctx, newProduct)
+	_, err := collection.InsertOne(ctx, productInfoBson)
 	if err != nil {
 		return err
 	}
-	fmt.Println("inserted with", result.InsertedID)
+
 	return nil
 }
 
+//!
 // EDIT PRODUCT
 func (x *Repository) editProduct(id primitive.ObjectID, newProductInfo *NewProduct) error {
+	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	filter := bson.M{"_id": id}
+
+	filter := bson.M{
+		"_id":      id,
+		"added_by": primitive.Binary{Subtype: 4, Data: newProductInfo.AddedBy[:]},
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"name":    newProductInfo.Name,
 			"brand":   newProductInfo.Brand,
 			"content": newProductInfo.Content,
+			"price":   newProductInfo.Price,
 		},
 	}
-	result, err := collection.UpdateOne(ctx, filter, update)
+	res, err := collection.UpdateOne(ctx, filter, update)
+
+	if res.MatchedCount == 0 {
+		return errors.New("document not found or user not authorized")
+	}
+
 	if err != nil {
 		return err
 	}
-	fmt.Println("updated with", result.UpsertedID)
 	return nil
 
 }
 
+// !
 // DELETE PRODUCT
-func (x *Repository) deleteProduct(id primitive.ObjectID) error {
+func (x *Repository) deleteProduct(id primitive.ObjectID, userID uuid.UUID) error {
+	//CTX
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	filter := bson.M{"_id": id}
+
+	filter := bson.M{"_id": id, "added_by": primitive.Binary{Subtype: 4, Data: userID[:]}}
 	update := bson.M{
 		"$set": bson.M{
-			"name":     "",
-			"brand":    "",
-			"content":  "",
-			"added_by": "",
+			"name":    "",
+			"brand":   "",
+			"content": "",
+			"price":   "",
 		},
 	}
-	result, err := collection.UpdateOne(ctx, filter, update)
+	res, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("deleted id", result.UpsertedID)
+	if res.MatchedCount == 0 {
+		return errors.New("document not found or user not authorized")
+	}
 	return nil
+}
+
+// todo HELPERS
+func (x *Repository) checkPage(page, totalCount int64) int64 {
+	if page < 1 {
+		page = 1
+	}
+	if totalCount < (page * itemsPerPage) {
+		floatPa := math.Ceil(float64(totalCount) / 10)
+		page = int64(floatPa)
+	}
+	if page == 0 {
+		page = 1
+	}
+	return page
 }

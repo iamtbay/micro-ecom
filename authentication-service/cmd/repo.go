@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -14,6 +16,33 @@ type Repository struct {
 
 func initRepository() *Repository {
 	return &Repository{}
+}
+
+// CHECK USER
+func (x *Repository) checkUser(userID uuid.UUID) (UserInfoDB, error) {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	//query
+	query := `SELECT user_id,name,surname,email FROM users WHERE user_id=$1`
+	var userInfoDB UserInfoDB
+	err := conn.QueryRow(ctx, query, userID).Scan(
+		&userInfoDB.ID,
+		&userInfoDB.Name,
+		&userInfoDB.Surname,
+		&userInfoDB.Email,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return UserInfoDB{}, errors.New("invalid email or password(pass)")
+		}
+		return UserInfoDB{}, err
+	}
+
+	return userInfoDB, nil
+
 }
 
 // LOGIN
@@ -26,10 +55,11 @@ func (x *Repository) login(userInfo *UserBasicInfo) (UserInfoDB, error) {
 		&userInfoDB.Surname,
 		&userInfoDB.Email,
 		&userInfoDB.Password,
+		&userInfoDB.IsAdmin,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return UserInfoDB{}, errors.New("invalid email or password(pass)")
+			return UserInfoDB{}, errors.New("invalid email or password")
 		}
 		return UserInfoDB{}, err
 	}
@@ -50,12 +80,11 @@ func (x *Repository) signup(userInfo *UserBasicInfo) error {
 		}
 		return err
 	}
-	fmt.Println("succesful")
 	return nil
 }
 
 // EDIT
-func (x *Repository) edit(userID int32, newUserInfo UserBasicInfo) error {
+func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
 	query := `UPDATE users
 			SET 
 				name=$1, surname=$2, email=$3
@@ -67,14 +96,13 @@ func (x *Repository) edit(userID int32, newUserInfo UserBasicInfo) error {
 		userID,
 	)
 	if err != nil {
-		fmt.Println(err.Error())
 		return errors.New("something went wrong")
 	}
 	return nil
 }
 
 // CHANGE PASSWORD
-func (x *Repository) changePassword(newPassword string, userID int32) error {
+func (x *Repository) changePassword(newPassword string, userID uuid.UUID) error {
 	query := `UPDATE users
 			SET password=$1
 			WHERE user_id=$2`
@@ -89,7 +117,7 @@ func (x *Repository) changePassword(newPassword string, userID int32) error {
 }
 
 // DELETE USER
-func (x *Repository) delete(userID int32) error {
+func (x *Repository) delete(userID uuid.UUID) error {
 	query := `UPDATE users SET name='', surname='', email='', password='' WHERE user_id=$1`
 	_, err := conn.Exec(context.Background(), query, userID)
 	if err != nil {
@@ -100,7 +128,7 @@ func (x *Repository) delete(userID int32) error {
 
 // QUERY METHODS
 
-func (x *Repository) getUserInfoDB(userID int32) (UserInfoDB, error) {
+func (x *Repository) getUserInfoDB(userID uuid.UUID) (UserInfoDB, error) {
 	query := `SELECT * FROM users WHERE user_id=$1`
 	fmt.Println("user id is", userID)
 	var userInfo UserInfoDB
@@ -110,6 +138,7 @@ func (x *Repository) getUserInfoDB(userID int32) (UserInfoDB, error) {
 		&userInfo.Surname,
 		&userInfo.Email,
 		&userInfo.Password,
+		&userInfo.IsAdmin,
 	)
 	if err != nil {
 		fmt.Println(err)
@@ -119,9 +148,9 @@ func (x *Repository) getUserInfoDB(userID int32) (UserInfoDB, error) {
 }
 
 // check e-mail to edit user email
-func (x *Repository) checkEmailIsUnique(email string, userID int32) error {
+func (x *Repository) checkEmailIsUnique(email string, userID uuid.UUID) error {
 	var count int
-	var dbUserID int32
+	var dbUserID uuid.UUID
 	query := `SELECT user_id, count(*) over () as total_count
 		FROM users WHERE email=$1`
 	err := conn.QueryRow(context.Background(), query, email).Scan(&dbUserID, &count)

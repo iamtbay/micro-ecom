@@ -17,8 +17,7 @@ var collection *mongo.Collection
 
 func main() {
 	r := gin.Default()
-
-	//GODOT ENV 
+	//GODOT ENV
 	if err := godotenv.Load(); err != nil {
 		panic(err)
 	}
@@ -37,16 +36,18 @@ func main() {
 
 	//ROUTES
 	initRotues(r)
+	connectRabbitMQ()
+	defer ch.Close()
 
 	//SERVER
-	err = r.Run(":8083")
+	err = r.Run(":8082")
 	if err != nil {
 		panic(err)
 	}
 
 }
 
-//connect db
+// connect db
 func connectDB() error {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(os.Getenv("MONGO_URI")).SetServerAPIOptions(serverAPI)

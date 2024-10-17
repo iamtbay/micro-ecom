@@ -1,7 +1,7 @@
 version: '3'
 services:
   users-db:
-    image: postgres:latest
+    image: postgres:15.8-alpine
     environment:
       POSTGRES_PASSWORD: secret
       POSTGRES_USER: postgres
@@ -12,3 +12,4 @@ services:
     
 
 
+  

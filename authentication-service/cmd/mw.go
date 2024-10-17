@@ -19,6 +19,8 @@ func authRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+//
 func notAuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		loggedIn := checkLoggedIn(c)

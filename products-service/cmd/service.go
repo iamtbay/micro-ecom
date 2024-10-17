@@ -1,9 +1,9 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
 )
 
 type Services struct {
@@ -17,18 +17,24 @@ func initServices() *Services {
 
 var repo = initRepository()
 
+// !
 // GET ALL PRODUCTS
-func (x *Services) getProducts() ([]*GetProduct, error) {
-	products, err := repo.getProducts()
+func (x *Services) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
+	products, pageInfos, err := repo.getProducts(page)
 	if err != nil {
-		return []*GetProduct{}, err
+		fmt.Println(page)
+		return []*GetProduct{}, &PageInfo{}, err
 	}
-	return products, nil
+	return products, pageInfos, nil
 }
 
+// !
 // GET SINGLE PRODUCT
 func (x *Services) getSingleProduct(id string) (*GetProduct, error) {
-	objID := turnIdToObjID(id)
+	objID, err := turnIdToObjID(id)
+	if err != nil {
+		return &GetProduct{}, err
+	}
 	product, err := repo.getSingleProduct(objID)
 	if err != nil {
 		return &GetProduct{}, err
@@ -36,9 +42,16 @@ func (x *Services) getSingleProduct(id string) (*GetProduct, error) {
 	return product, nil
 }
 
+// !
+// ADD PRODUCT
 func (x *Services) addProduct(newProduct *NewProduct) error {
 
-	err := repo.addProduct(newProduct) // user id because of added by?
+	err := x.checkCredentials(newProduct)
+	if err != nil {
+		return err
+	}
+	err = repo.addProduct(newProduct) // user id because of added by?
+
 	if err != nil {
 		return err
 	}
@@ -46,34 +59,49 @@ func (x *Services) addProduct(newProduct *NewProduct) error {
 	return nil
 }
 
+// !
+// EDIT PRODUCT
 func (x *Services) editProduct(id string, newProduct *NewProduct) (*NewProduct, error) {
-	objID := turnIdToObjID(id)
-	err := repo.editProduct(objID, newProduct)
+	objID, err := turnIdToObjID(id)
 	if err != nil {
 		return &NewProduct{}, err
+	}
+	err = x.checkCredentials(newProduct)
+	if err != nil {
+		return &NewProduct{}, err
+	}
+	err = repo.editProduct(objID, newProduct)
+	if err != nil {
+		return &NewProduct{}, err
+	}
+
+	//publish changes
+	product := GetProduct{
+		ID:    objID,
+		Name:  newProduct.Name,
+		Price: newProduct.Price,
+	}
+	err = publishPrice(product)
+	if err!=nil{
+		fmt.Println(err)
 	}
 
 	return newProduct, nil
 }
 
-func (x *Services) deleteProduct(id string) error {
+// !
+// DELETE PRODUCT
+func (x *Services) deleteProduct(id string, userID uuid.UUID) error {
 
-	objID := turnIdToObjID(id)
+	objID, err := turnIdToObjID(id)
+	if err != nil {
+		return err
+	}
 	//also user id needed to verify user has authorized or not
-	err := repo.deleteProduct(objID)
+	err = repo.deleteProduct(objID, userID)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// HELPER
-func turnIdToObjID(id string) (objID primitive.ObjectID) {
-
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		log.Fatal("something bad while turning ID to object ID")
-	}
-	return
 }

@@ -1,6 +1,9 @@
 package main
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
 
 type UserBasicInfo struct {
 	Name     string `json:"name"`
@@ -9,12 +12,13 @@ type UserBasicInfo struct {
 	Password string `json:"password"`
 }
 type UserInfoDB struct {
-	ID int32 `json:"user_id"` //change to google id
+	ID uuid.UUID `json:"user_id"`
 	UserBasicInfo
+	IsAdmin bool `json:"is_admin"`
 }
 type jwtClaims struct {
-	UserID int32    `json:"user_id"`
-	Email  string `json:"email"`
+	UserID uuid.UUID `json:"user_id"`
+	Email  string    `json:"email"`
 	jwt.RegisteredClaims
 }
 

@@ -17,20 +17,49 @@ func initHandlers() *Handlers {
 
 // CHECK
 func (x *Handlers) check(c *gin.Context) {
-	fmt.Println("check")
+	cookie, err := getCookie(c)
+	if err != nil {
+		c.JSON(401, gin.H{
+			"error":   err.Error(),
+			"message": "User couldn't verify",
+		})
+		return
+	}
+
+	userInfo, err := services.checkUser(cookie)
+	if err != nil {
+
+		c.JSON(401, gin.H{
+			"error":   err.Error(),
+			"message": "User couldn't verify",
+		})
+		return
+
+	}
+
+	//return json
+	c.JSON(200, gin.H{
+		"message": "User has verified",
+		"data": gin.H{
+			"user_id": userInfo.ID,
+			"name":    userInfo.Name,
+			"surname": userInfo.Surname,
+			"email":   userInfo.Email,
+		},
+	})
 }
 
 // LOGIN
 func (x *Handlers) login(c *gin.Context) {
-	var userInfos UserBasicInfo
-	err := c.BindJSON(&userInfos)
+	var userInfo UserBasicInfo
+	err := c.BindJSON(&userInfo)
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println("Error bind json")
 		return
 	}
 
 	//service req
-	token, err := services.login(userInfos)
+	token,userInfos, err := services.login(userInfo)
 	if err != nil {
 		c.JSON(401, gin.H{
 			"error": err.Error(),
@@ -40,8 +69,17 @@ func (x *Handlers) login(c *gin.Context) {
 	//arrange jwt as a cookie
 	setCookie(c, "accessToken", token)
 
+
 	//RETURN RESPONSE
-	successJSON(http.StatusOK, "succesfully logged in", userInfos.Name, userInfos.Surname, userInfos.Email, c)
+	c.JSON(200, gin.H{
+		"message": "User has verified",
+		"data": gin.H{
+			"user_id": userInfos.ID,
+			"name":    userInfos.Name,
+			"surname": userInfos.Surname,
+			"email":   userInfos.Email,
+		},
+	})
 
 }
 
@@ -67,7 +105,6 @@ func (x *Handlers) signup(c *gin.Context) {
 
 // EDIT
 func (x *Handlers) edit(c *gin.Context) {
-	fmt.Println("edit")
 	var userInfos UserBasicInfo
 	err := c.BindJSON(&userInfos)
 	if err != nil {
@@ -114,6 +151,7 @@ func (x *Handlers) changePassword(c *gin.Context) {
 
 	//service req
 	err = services.changePassword(newPassword.Password, token)
+	fmt.Println("new pass handler",newPassword.Password)
 	if err != nil {
 		c.JSON(401, gin.H{
 			"error": err.Error(),
@@ -125,7 +163,6 @@ func (x *Handlers) changePassword(c *gin.Context) {
 
 // DELETE
 func (x *Handlers) delete(c *gin.Context) {
-	fmt.Println("delete")
 	//get cookie
 	token, err := getCookie(c)
 	if err != nil {

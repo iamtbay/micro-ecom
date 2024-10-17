@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net/http"
 	"os"
 	"regexp"
 	"time"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -67,14 +69,14 @@ func isPasswordCorrect(hashedPassword, password string) bool {
 }
 
 // CREATE JWT
-func createJWT(id int32, email string) (string, error) {
+func createJWT(id uuid.UUID, email string) (string, error) {
 	claims := jwtClaims{
 		UserID: id,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "tyr-Shopping",
 			Subject:   "access",
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Second)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
@@ -89,24 +91,28 @@ func createJWT(id int32, email string) (string, error) {
 }
 
 // PARSE JWT
-func parseJWT(tokenString string) (int32, error) {
+func parseJWT(tokenString string) (uuid.UUID, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {
-		return 0, err
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return uuid.UUID{}, errors.New("invalid token, please login again")
+		}
+		return uuid.UUID{}, err
 	} else if claims, ok := token.Claims.(*jwtClaims); ok {
 		return claims.UserID, nil
 	} else {
-		return 0, errors.New("something went wrong while verifying user")
+		return uuid.UUID{}, errors.New("something went wrong while verifying user")
 	}
 
 }
 
 // SET COOKIE
 func setCookie(c *gin.Context, tokenName, token string) {
-	c.SetCookie(tokenName, token, 0, "/", "localhost", false, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie(tokenName, token, 3600, "/", "localhost", true, true)
 }
 
 // GET COOKIE

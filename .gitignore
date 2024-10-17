@@ -1,3 +1,14 @@
 authentication-service/.env
+authentication-service/.authService
+
 orders-service/.env
+orders-service/ordersAddressesService
+
 products-service/.env
+products-service/productsService
+
+cart-service/.env
+cart-service/cartService
+
+broker-service/.env
+broker-service/brokerService

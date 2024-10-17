@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres-authentication:
+    image: postgres:15.8-alpine
+    container_name: postgres-authentication
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: postgres
+      POSTGRES_DB: users
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./authentication-service/db/migrations/000001_create_users_table.up.sql:/docker-entrypoint-initdb.d/000001_create_users_table.up.sql
+
+  postgres-orders-adresses:
+    image: postgres:15.8-alpine
+    container_name: postgres-orders-adresses
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: postgres
+      POSTGRES_DB: orders-adresses
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./orders-service/db/migrations/000001_create_orders_table.up.sql:/docker-entrypoint-initdb.d/000001_create_users_orders.up.sql
+
+  redis-cart:
+    image: redis:latest
+    container_name: redis-cart
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  rabbitmq-cart-orders:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes: 
+  redis_data:

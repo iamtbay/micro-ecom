@@ -14,30 +14,56 @@ func initServices() *Services {
 	return &Services{}
 }
 
+//CHECK SERVICE
+
+func (x *Services) checkUser(cookie string) (UserInfoDB, error) {
+	userID, err := parseJWT(cookie)
+	if err != nil {
+		return UserInfoDB{}, err
+	}
+	userInfo, err := repo.checkUser(userID)
+	if err != nil {
+		return UserInfoDB{}, err
+	}
+	return userInfo, nil
+}
+
 // LOGIN SERVICE
-func (x *Services) login(userInfo UserBasicInfo) (string, error) {
+func (x *Services) login(userInfo UserBasicInfo) (string, UserInfoDB, error) {
 	//check the user infos is okay or lack?
 	if !isValidEmail(userInfo.Email) {
-		return "", errors.New("invalid e-mail")
+		return "", UserInfoDB{}, errors.New("invalid email")
 	}
 	//MAKE DB TRANSACTIONS
 	userInfoDB, err := repo.login(&userInfo)
 	if err != nil {
 		fmt.Println("Error service", err)
-		return "", err
+		return "", UserInfoDB{}, err
 	}
 	//IS PASSWORD CORRECT?
 	if !isPasswordCorrect(userInfoDB.Password, userInfo.Password) {
-		return "", errors.New("invalid email or password ")
+		fmt.Println(userInfoDB.Password, userInfo.Password)
+		return "", UserInfoDB{}, errors.New("invalid credentials 1")
 	}
 
 	//CREATE JWT
 	token, err := createJWT(userInfoDB.ID, userInfoDB.Email)
 	if err != nil {
-		return "", err
+		return "", UserInfoDB{}, err
 	}
 
-	return token, nil
+	return token,
+		UserInfoDB{
+			userInfoDB.ID,
+			UserBasicInfo{
+				userInfoDB.Name,
+				userInfoDB.Surname,
+				userInfoDB.Email,
+				"",
+			},
+			userInfoDB.IsAdmin,
+		},
+		nil
 }
 
 // SIGNUP SERVICE
@@ -87,7 +113,7 @@ func (x *Services) edit(userInfo UserBasicInfo, token string) error {
 	if userInfoDB.ID != userID {
 		return errors.New("user id and jwt user id isn't equal")
 	}
-	
+
 	//check is email registered for anyother people or not
 	err = repo.checkEmailIsUnique(userInfo.Email, userID)
 	if err != nil {
@@ -102,7 +128,6 @@ func (x *Services) edit(userInfo UserBasicInfo, token string) error {
 		return errors.New("invalid surname")
 	}
 
-	
 	//SAVE NEW INFOS
 	err = repo.edit(userInfoDB.ID, userInfo)
 	if err != nil {
@@ -121,8 +146,10 @@ func (x *Services) changePassword(newPassword string, token string) error {
 		return errors.New("something went wrong,parsejwt")
 	}
 
+	fmt.Println("new pass string", newPassword)
 	//hash password
 	newPassword, err = hashPassword(newPassword)
+	fmt.Println("new pass service", newPassword)
 	if err != nil {
 		return errors.New("something went wrong,hash password")
 	}
