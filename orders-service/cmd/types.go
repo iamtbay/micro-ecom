@@ -59,3 +59,7 @@ type GetAddresses struct {
 	Country     string    `json:"country"`
 	IsDeleted   bool      `json:"-"`
 }
+
+type MessageType struct {
+	Message string `json:"message"`
+}

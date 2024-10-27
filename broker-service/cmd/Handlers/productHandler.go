@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,8 +16,6 @@ type ProductHandlers struct{}
 func InitProductHandlers() *ProductHandlers {
 	return &ProductHandlers{}
 }
-
-var productServiceURL = "http://localhost:8082/api/v1"
 
 // get products
 func (x *ProductHandlers) GetAllProducts(c *gin.Context) {
@@ -35,7 +34,7 @@ func (x *ProductHandlers) GetAllProducts(c *gin.Context) {
 		return
 	}
 	//
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v?page=%v", productServiceURL, page), serviceReq)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v?page=%v", os.Getenv("PRODUCT_SERVICE_URL"), page), serviceReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -60,7 +59,7 @@ func (x *ProductHandlers) GetProductByID(c *gin.Context) {
 	productID := c.Param("id")
 
 	//request
-	serviceResp, err := http.Get(fmt.Sprintf("%v/s/%v", productServiceURL, productID))
+	serviceResp, err := http.Get(fmt.Sprintf("%v/s/%v", os.Getenv("PRODUCT_SERVICE_URL"), productID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -118,7 +117,7 @@ func (x *ProductHandlers) AddProduct(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//service
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/add", productServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/add", os.Getenv("PRODUCT_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -166,7 +165,7 @@ func (x *ProductHandlers) EditProduct(c *gin.Context) {
 
 	//get cookie
 	cookie := c.Request.Header.Get("cookie")
-	
+
 	//create req
 	req, err := http.NewRequest("PATCH", "", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -177,7 +176,7 @@ func (x *ProductHandlers) EditProduct(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 	//send to service
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/s/%v", productServiceURL, productID), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/s/%v", os.Getenv("PRODUCT_SERVICE_URL"), productID), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -210,7 +209,7 @@ func (x *ProductHandlers) DeleteProduct(c *gin.Context) {
 
 	//get cookie
 	cookie := c.Request.Header.Get("cookie")
-	
+
 	//create req
 	req, err := http.NewRequest("DELETE", "", nil)
 	if err != nil {
@@ -221,7 +220,7 @@ func (x *ProductHandlers) DeleteProduct(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 	//send to service
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/s/%v", productServiceURL, productID), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/s/%v", os.Getenv("PRODUCT_SERVICE_URL"), productID), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

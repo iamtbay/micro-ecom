@@ -39,3 +39,7 @@ type UpdateProductType struct {
 	Name  string             `json:"name"`
 	Price float64            `json:"price"`
 }
+
+type MessageType struct {
+	Message string `json:"message"`
+}

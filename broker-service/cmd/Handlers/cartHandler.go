@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
-
-var cartServiceURL = "http://localhost:8084/api/v1"
 
 type CartHandler struct{}
 
@@ -33,7 +32,7 @@ func (x *CartHandler) GetCart(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart", cartServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart", os.Getenv("CART_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -80,7 +79,7 @@ func (x *CartHandler) AddToCart(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//send req to service
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v", cartServiceURL, productID), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v", os.Getenv("CART_SERVICE_URL"), productID), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -125,7 +124,7 @@ func (x *CartHandler) UpdateQuantityOfProduct(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v?quantity=%v", cartServiceURL, productID, quantity), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v?quantity=%v", os.Getenv("CART_SERVICE_URL"), productID, quantity), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -154,7 +153,7 @@ func (x *CartHandler) DeleteProductOnCart(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 	//resp
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v", cartServiceURL, productID), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/cart/%v", os.Getenv("CART_SERVICE_URL"), productID), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -193,7 +192,7 @@ func (x *CartHandler) CheckOut(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/checkout", cartServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/checkout", os.Getenv("CART_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

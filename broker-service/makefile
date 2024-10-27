@@ -2,6 +2,7 @@ AUTH_SERVICE_DIR:= ../authentication-service
 PRODUCTS_SERVICE_DIR:= ../products-service
 CART_SERVICE_DIR:= ../cart-service
 ORDERS_SERVICE_DIR:= ../orders-service
+REVIEWS_SERVICE_DIR:= ../reviews-service
 BROKER_SERVICE_DIR:= ../broker-service
 
 build: 
@@ -26,7 +27,11 @@ build_orders_service:
 	@echo "Building orders service..."
 	cd $(ORDERS_SERVICE_DIR) && go build -o ordersAddressesService cmd/*.go
 
-buildAll: build build_auth_service build_products_service build_cart_service build_orders_service
+build_reviews_service:
+	@echo "Building reviews service..."
+	cd $(REVIEWS_SERVICE_DIR) && go build -o reviewsService cmd/*.go
+
+buildAll: build build_auth_service build_products_service build_cart_service build_orders_service build_reviews_service
 	@echo "All services built succesfully"
 
 # run
@@ -42,8 +47,8 @@ run_cart_service:
 run_orders_service:
 	cd $(ORDERS_SERVICE_DIR) && ./ordersAddressesService &
 
-runAll: run_auth_service run_products_service run_cart_service run_orders_service run
-	@echo "All services running"
+run_reviews_service:
+	cd $(REVIEWS_SERVICE_DIR) && ./reviewsService &
 
 stopAll:
 	-@pkill -f authService || true
@@ -51,4 +56,8 @@ stopAll:
 	-@pkill -f cartService || true
 	-@pkill -f ordersAddressesService || true
 	-@pkill -f brokerService || true
+	-@pkill -f reviewsService || true
 	@echo "All services stopped"
+
+runAll: stopAll run_auth_service run_products_service run_cart_service run_orders_service run_reviews_service run
+	@echo "All services running"

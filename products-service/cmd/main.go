@@ -12,8 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var mongoConn *mongo.Client
-var collection *mongo.Collection
+var (
+	mongoConn  *mongo.Client
+	collection *mongo.Collection
+)
 
 func main() {
 	r := gin.Default()

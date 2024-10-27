@@ -29,7 +29,9 @@ func initRoutes(r *gin.Engine) {
 	})
 
 	route := r.Group("/api/v1")
-
+	route.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Hello!"})
+	})
 	//auth
 	authHandlers := handlersPackage.InitAuthHandlers()
 	route.GET("/auth/check", cookieRequired(), authHandlers.Check)
@@ -70,5 +72,15 @@ func initRoutes(r *gin.Engine) {
 	route.GET("/address/:id", cookieRequired(), addressHandlers.GetSingleAddressByID)
 	route.PATCH("/address/:id", cookieRequired(), addressHandlers.EditAddressByID)
 	route.DELETE("/address/:id", cookieRequired(), addressHandlers.DeleteAddressByID)
+
+	//reviews
+	reviewHandler := handlersPackage.InitReviewHandlers()
+	//id=prod id
+	route.GET("/reviews/:id", reviewHandler.GetProductReviewsByProductID)
+	route.POST("/reviews/:id", cookieRequired(), reviewHandler.NewReview)
+
+	route.GET("/review/:id", reviewHandler.GetReviewByID)
+	route.PATCH("/review/:id", cookieRequired(), reviewHandler.EditReviewByReviewID)
+	route.DELETE("/review/:id", cookieRequired(), reviewHandler.DeleteReviewByReviewID)
 
 }

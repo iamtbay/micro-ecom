@@ -76,7 +76,7 @@ func createJWT(id uuid.UUID, email string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "tyr-Shopping",
 			Subject:   "access",
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Second)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},

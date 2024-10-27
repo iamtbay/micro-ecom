@@ -80,7 +80,6 @@ func (x *ProductsHandler) addProduct(c *gin.Context) {
 	err = c.BindJSON(&productInfo)
 	productInfo.AddedBy = userID
 	if err != nil {
-		fmt.Println("error here?")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Something went wrong",
 			"error":   err.Error(),

@@ -48,6 +48,32 @@ func consumeMessages(ch *amqp.Channel) {
 			if err != nil {
 				fmt.Println(err)
 			}
+			err = publishNotification(ch, MessageType{Message: "New order!"})
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}()
+}
+
+func publishNotification(ch *amqp.Channel, msg MessageType) error {
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	err = ch.Publish(
+		"notifications_exchange",
+		"order.created",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        jsonData,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

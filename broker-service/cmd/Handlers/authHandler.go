@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandlers struct{}
-
-var authServiceURL = "http://localhost:8081/api/v1"
 
 func InitAuthHandlers() *AuthHandlers {
 	return &AuthHandlers{}
@@ -30,9 +29,8 @@ func (x *AuthHandlers) Check(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/check", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/check", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
-		fmt.Println("error here")
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -64,7 +62,7 @@ func (x *AuthHandlers) Login(c *gin.Context) {
 		return
 	}
 	req, _ := http.NewRequest("POST", "", bytes.NewReader(jsonData))
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/login", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/login", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -114,7 +112,7 @@ func (x *AuthHandlers) Signup(c *gin.Context) {
 	}
 
 	// send req
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/signup", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/signup", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -162,7 +160,7 @@ func (x *AuthHandlers) Edit(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//send req
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/edit", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/edit", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -207,7 +205,7 @@ func (x *AuthHandlers) ChangePassword(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 	// send to service
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/changepassword", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/changepassword", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -240,7 +238,7 @@ func (x *AuthHandlers) Logout(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/logout", authServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/logout", os.Getenv("AUTH_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(400, gin.H{"message": err.Error()})
 		return

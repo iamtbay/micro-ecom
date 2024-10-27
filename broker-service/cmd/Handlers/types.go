@@ -21,6 +21,7 @@ type ProductData struct {
 	Name     string    `json:"name"`
 	Brand    string    `json:"brand"`
 	Content  string    `json:"content"`
+	Price    float64   `json:"price"`
 	Added_By uuid.UUID `json:"added_by"`
 }
 
@@ -60,4 +61,11 @@ type NewAddress struct {
 	State       string `json:"state"`
 	PostalCode  string `json:"postal_code"`
 	Country     string `json:"country"`
+}
+
+type NewReview struct {
+	Name    string `json:"name" bson:"name"`
+	Surname string `json:"surname" bson:"surname"`
+	Point   int64  `json:"point" bson:"point"`
+	Comment string `json:"comment" bson:"comment"`
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,8 +16,6 @@ type OrderHandler struct{}
 func InitOrderHandlers() *OrderHandler {
 	return &OrderHandler{}
 }
-
-var ordersServiceURL = "http://localhost:8083/api/v1"
 
 // !
 // GET ORDERS BY USER ID
@@ -34,7 +33,7 @@ func (x *OrderHandler) GetOrdersByUserID(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/user/%v", ordersServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/user/%v", os.Getenv("ORDERS_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -66,7 +65,7 @@ func (x *OrderHandler) GetSingleOrder(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", ordersServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("ORDERS_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -86,7 +85,7 @@ func (x *OrderHandler) GetSingleOrder(c *gin.Context) {
 // NEW ORDER
 func (x *OrderHandler) NewOrder(c *gin.Context) {
 	cookie := c.Request.Header.Get("cookie")
-	
+
 	var newOrder OrderRequest
 	err := c.BindJSON(&newOrder)
 	if err != nil {
@@ -106,7 +105,7 @@ func (x *OrderHandler) NewOrder(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/newOrder", ordersServiceURL), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/newOrder", os.Getenv("ORDERS_SERVICE_URL")), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -137,7 +136,7 @@ func (x *OrderHandler) DeleteOrder(c *gin.Context) {
 	req.Header.Add("cookie", cookie)
 
 	//
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", ordersServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("ORDERS_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

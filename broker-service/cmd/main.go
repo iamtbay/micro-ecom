@@ -3,8 +3,6 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-
-	"log"
 )
 
 func main() {
@@ -12,7 +10,7 @@ func main() {
 
 	//godotenv
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(".env file couldn't find !!!")
+		panic(err)
 	}
 
 	initRoutes(r)

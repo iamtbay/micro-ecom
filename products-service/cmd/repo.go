@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"time"
@@ -58,7 +57,6 @@ func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 	for cursor.Next(ctx) {
 		var product *GetProductBSON
 		if err := cursor.Decode(&product); err != nil {
-			fmt.Println("error?")
 			return products, &PageInfo{}, err
 		}
 		uuidFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
@@ -71,7 +69,6 @@ func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 			Brand:   product.Brand,
 			Content: product.Content,
 			Price:   product.Price,
-			// is true?
 			AddedBy: uuidFromBinary,
 		})
 	}
@@ -146,7 +143,7 @@ func (x *Repository) addProduct(newProduct *NewProduct) error {
 	return nil
 }
 
-//!
+// !
 // EDIT PRODUCT
 func (x *Repository) editProduct(id primitive.ObjectID, newProductInfo *NewProduct) error {
 	//ctx

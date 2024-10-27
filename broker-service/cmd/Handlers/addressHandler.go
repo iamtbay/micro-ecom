@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,13 +17,10 @@ func InitAddressHandlers() *AddressHandler {
 	return &AddressHandler{}
 }
 
-var addressesServiceURL = "http://localhost:8083/api/v1/address"
-
 // !
 // GET ADDRESSES
 func (x *AddressHandler) GetAddresses(c *gin.Context) {
 	cookie := c.Request.Header.Get("cookie")
-	
 
 	req, err := http.NewRequest("GET", "", nil)
 	if err != nil {
@@ -31,7 +29,7 @@ func (x *AddressHandler) GetAddresses(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(addressesServiceURL, req)
+	serviceResp, err := forwardRequest(os.Getenv("ADRESSES_SERVICE_URL"), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -58,7 +56,7 @@ func (x *AddressHandler) GetSingleAddressByID(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", addressesServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("ADRESSES_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -76,7 +74,6 @@ func (x *AddressHandler) GetSingleAddressByID(c *gin.Context) {
 // ADD NEW ADDRESS
 func (x *AddressHandler) AddNewAddress(c *gin.Context) {
 	cookie := c.Request.Header.Get("cookie")
-
 
 	var newAddress NewAddress
 	err := c.BindJSON(&newAddress)
@@ -97,7 +94,7 @@ func (x *AddressHandler) AddNewAddress(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(addressesServiceURL, req)
+	serviceResp, err := forwardRequest(os.Getenv("ADRESSES_SERVICE_URL"), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -136,7 +133,7 @@ func (x *AddressHandler) EditAddressByID(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", addressesServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("ADRESSES_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -163,7 +160,7 @@ func (x *AddressHandler) DeleteAddressByID(c *gin.Context) {
 	}
 	req.Header.Add("cookie", cookie)
 
-	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", addressesServiceURL, id), req)
+	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("ADRESSES_SERVICE_URL"), id), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

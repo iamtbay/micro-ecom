@@ -12,3 +12,8 @@ cart-service/cartService
 
 broker-service/.env
 broker-service/brokerService
+
+reviews-service/.env
+reviews-service/reviewsService
+
+notification-service/notificationService

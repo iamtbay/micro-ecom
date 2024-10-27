@@ -83,6 +83,29 @@ func publishMessage(ch *amqp.Channel, order CartOrder) error {
 	return nil
 }
 
+
+
+func publishNotification(ch *amqp.Channel, msg MessageType) error {
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	err = ch.Publish(
+		"notifications_exchange",
+		"cart.updated",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        jsonData,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func consumeMessages() {
 	msgs, err := ch.Consume(
 		"price_updates_queue",
@@ -108,6 +131,11 @@ func consumeMessages() {
 			err = services.updateProduct(product)
 			if err != nil {
 				log.Fatal("something went wrong while listening changes", err)
+			}
+			//notification
+			err = publishNotification(ch, MessageType{Message: "Price has changed"})
+			if err != nil {
+				log.Fatal("something went wrong while sending notification", err)
 			}
 			fmt.Println("consumer did his work!")
 		}
