@@ -20,9 +20,15 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 		c.Abort()
 	}
 
-	token, err := jwt.ParseWithClaims(cookie, &jwtClaims{}, func(t *jwt.Token) (interface{}, error) {
+	return parseJWT(cookie)
+
+}
+
+func parseJWT(tokenString string) (uuid.UUID, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
+
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			return uuid.UUID{}, errors.New("invalid token, please login again")
@@ -35,5 +41,4 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 	} else {
 		return uuid.UUID{}, err
 	}
-
 }

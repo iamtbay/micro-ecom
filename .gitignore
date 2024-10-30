@@ -17,3 +17,6 @@ reviews-service/.env
 reviews-service/reviewsService
 
 notification-service/notificationService
+
+inventory-service/inventoryService
+inventory-service/.env

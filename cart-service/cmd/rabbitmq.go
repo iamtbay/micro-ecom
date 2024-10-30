@@ -83,7 +83,27 @@ func publishMessage(ch *amqp.Channel, order CartOrder) error {
 	return nil
 }
 
-
+// add it to cart updates!
+func publishInventoryData(ch *amqp.Channel, routingKey string, msg any) error {
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	err = ch.Publish(
+		"inventory_exchange",
+		routingKey,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        jsonData,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func publishNotification(ch *amqp.Channel, msg MessageType) error {
 	jsonData, err := json.Marshal(msg)

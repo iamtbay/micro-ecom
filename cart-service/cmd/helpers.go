@@ -15,6 +15,11 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 		return uuid.UUID{}, err
 	}
 
+	return parseJWT(tokenString)
+
+}
+
+func parseJWT(tokenString string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -30,5 +35,4 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 	} else {
 		return uuid.UUID{}, err
 	}
-
 }

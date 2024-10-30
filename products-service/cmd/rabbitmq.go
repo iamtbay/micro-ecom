@@ -82,3 +82,26 @@ func publishPrice(product GetProduct) error {
 	fmt.Println("published!")
 	return nil
 }
+
+func publishNewProduct(productInventory ProductInventoryType) error {
+
+	jsonData, err := json.Marshal(&productInventory)
+	if err != nil {
+		return err
+	}
+	err = ch.Publish(
+		"inventory_exchange",
+		"inventory.new",
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        jsonData,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}

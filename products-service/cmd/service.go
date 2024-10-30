@@ -50,11 +50,15 @@ func (x *Services) addProduct(newProduct *NewProduct) error {
 	if err != nil {
 		return err
 	}
-	err = repo.addProduct(newProduct) // user id because of added by?
+	productID, err := repo.addProduct(newProduct) // user id because of added by?
 
 	if err != nil {
 		return err
 	}
+	publishNewProduct(ProductInventoryType{
+		ProductID: productID.Hex(),
+		Quantity:  newProduct.Stock,
+	})
 
 	return nil
 }
@@ -82,7 +86,7 @@ func (x *Services) editProduct(id string, newProduct *NewProduct) (*NewProduct, 
 		Price: newProduct.Price,
 	}
 	err = publishPrice(product)
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 

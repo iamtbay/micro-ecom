@@ -43,3 +43,8 @@ type UpdateProductType struct {
 type MessageType struct {
 	Message string `json:"message"`
 }
+
+type InventoryMessage struct {
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
+}

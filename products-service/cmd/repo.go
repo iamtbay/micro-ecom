@@ -122,7 +122,7 @@ func (x *Repository) getSingleProduct(id primitive.ObjectID) (*GetProduct, error
 }
 
 // ADD PRODUCT
-func (x *Repository) addProduct(newProduct *NewProduct) error {
+func (x *Repository) addProduct(newProduct *NewProduct) (primitive.ObjectID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
@@ -135,12 +135,17 @@ func (x *Repository) addProduct(newProduct *NewProduct) error {
 	}
 
 	//query
-	_, err := collection.InsertOne(ctx, productInfoBson)
+	result, err := collection.InsertOne(ctx, productInfoBson)
+
 	if err != nil {
-		return err
+		return primitive.NilObjectID, err
+	}
+	insertedID, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, errors.New("couldn't get the insreted id")
 	}
 
-	return nil
+	return insertedID, nil
 }
 
 // !

@@ -25,6 +25,19 @@ services:
     volumes:
       - ./orders-service/db/migrations/000001_create_orders_table.up.sql:/docker-entrypoint-initdb.d/000001_create_users_orders.up.sql
 
+  postgres-inventory:
+    image: postgres:15.8-alpine
+    container_name: postgres-inventory
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: postgres
+      POSTGRES_DB: product-inventory
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./inventory-service/db/migrations/000001_add_inventory_table.up.sql:/docker-entrypoint-initdb.d/000001_add_inventory_table.up
+
+
   redis-cart:
     image: redis:latest
     container_name: redis-cart

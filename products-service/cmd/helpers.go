@@ -41,7 +41,7 @@ func (x *Services) checkCredentials(productInfo *NewProduct) error {
 //CHECK COOKIE IS VALID
 
 func isCookieValid(c *gin.Context) (uuid.UUID, error) {
-	cookie, err := c.Cookie("accessToken")
+	tokenString, err := c.Cookie("accessToken")
 	if err != nil {
 		errJSON(http.StatusUnauthorized, err, "Access error", c)
 		c.Abort()
@@ -49,7 +49,11 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 
 	}
 
-	token, err := jwt.ParseWithClaims(cookie, &jwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+	return parseJWT(tokenString)
+}
+
+func parseJWT(tokenString string) (uuid.UUID, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {
@@ -61,8 +65,7 @@ func isCookieValid(c *gin.Context) (uuid.UUID, error) {
 
 	if claims, ok := token.Claims.(*jwtClaims); ok {
 		return claims.UserID, nil
-	} else {
-
-		return uuid.UUID{}, errors.New("something went wrong while verifying user")
 	}
+	return uuid.UUID{}, errors.New("something went wrong while verifying user")
+
 }

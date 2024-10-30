@@ -47,9 +47,12 @@ func (x *Repository) checkUser(userID uuid.UUID) (UserInfoDB, error) {
 
 // LOGIN
 func (x *Repository) login(userInfo *UserBasicInfo) (UserInfoDB, error) {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	query := `SELECT * FROM users WHERE email=$1`
 	var userInfoDB UserInfoDB
-	err := conn.QueryRow(context.Background(), query, userInfo.Email).Scan(
+	err := conn.QueryRow(ctx, query, userInfo.Email).Scan(
 		&userInfoDB.ID,
 		&userInfoDB.Name,
 		&userInfoDB.Surname,
@@ -70,8 +73,12 @@ func (x *Repository) login(userInfo *UserBasicInfo) (UserInfoDB, error) {
 
 // SIGN UP
 func (x *Repository) signup(userInfo *UserBasicInfo) error {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	query := `INSERT INTO users(name,surname,email,password) VALUES($1, $2, $3, $4)`
-	_, err := conn.Exec(context.Background(), query, userInfo.Name, userInfo.Surname, userInfo.Email, userInfo.Password)
+	_, err := conn.Exec(ctx, query, userInfo.Name, userInfo.Surname, userInfo.Email, userInfo.Password)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == "23505" {
@@ -85,11 +92,14 @@ func (x *Repository) signup(userInfo *UserBasicInfo) error {
 
 // EDIT
 func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	query := `UPDATE users
 			SET 
 				name=$1, surname=$2, email=$3
 			WHERE user_id=$4`
-	_, err := conn.Exec(context.Background(), query,
+	_, err := conn.Exec(ctx, query,
 		newUserInfo.Name,
 		newUserInfo.Surname,
 		newUserInfo.Email,
@@ -103,10 +113,13 @@ func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
 
 // CHANGE PASSWORD
 func (x *Repository) changePassword(newPassword string, userID uuid.UUID) error {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	query := `UPDATE users
 			SET password=$1
 			WHERE user_id=$2`
-	_, err := conn.Exec(context.Background(), query,
+	_, err := conn.Exec(ctx, query,
 		newPassword,
 		userID,
 	)
@@ -118,8 +131,11 @@ func (x *Repository) changePassword(newPassword string, userID uuid.UUID) error 
 
 // DELETE USER
 func (x *Repository) delete(userID uuid.UUID) error {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	query := `UPDATE users SET name='', surname='', email='', password='' WHERE user_id=$1`
-	_, err := conn.Exec(context.Background(), query, userID)
+	_, err := conn.Exec(ctx, query, userID)
 	if err != nil {
 		return err
 	}
@@ -129,10 +145,13 @@ func (x *Repository) delete(userID uuid.UUID) error {
 // QUERY METHODS
 
 func (x *Repository) getUserInfoDB(userID uuid.UUID) (UserInfoDB, error) {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	query := `SELECT * FROM users WHERE user_id=$1`
 	fmt.Println("user id is", userID)
 	var userInfo UserInfoDB
-	err := conn.QueryRow(context.Background(), query, userID).Scan(
+	err := conn.QueryRow(ctx, query, userID).Scan(
 		&userInfo.ID,
 		&userInfo.Name,
 		&userInfo.Surname,
@@ -149,11 +168,15 @@ func (x *Repository) getUserInfoDB(userID uuid.UUID) (UserInfoDB, error) {
 
 // check e-mail to edit user email
 func (x *Repository) checkEmailIsUnique(email string, userID uuid.UUID) error {
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	var count int
 	var dbUserID uuid.UUID
 	query := `SELECT user_id, count(*) over () as total_count
 		FROM users WHERE email=$1`
-	err := conn.QueryRow(context.Background(), query, email).Scan(&dbUserID, &count)
+	err := conn.QueryRow(ctx, query, email).Scan(&dbUserID, &count)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil

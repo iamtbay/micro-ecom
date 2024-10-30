@@ -1,4 +1,4 @@
 build:
-	go build -o productService ./cmd/*.go
+	go build -o productsService ./cmd/*.go
 run: build
-	./productService
+	./productsService

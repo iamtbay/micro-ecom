@@ -87,7 +87,7 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 		//todo
 		// can we change the amount dynamically? especially when coding front-end
 		// maybe create router for increase and decraese
-		err = rdb.HIncrBy(ctx, fmt.Sprintf("cart:%s:%s", userID.String(), product.ProductID.Hex()), "quantity", 1).Err()
+		err = rdb.HIncrBy(ctx, fmt.Sprintf("cart:%s:%s", userID.String(), product.ProductID.Hex()), "quantity", int64(product.Quantity)).Err()
 
 		if err != nil {
 			return err
@@ -99,61 +99,28 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 	return nil
 }
 
+// todo shorten it
 // !
 // UPDATE QUANTITY OF PRODUCT
-func (x *Repository) updateQuantityOfProduct(userID uuid.UUID, productID string, quantity int, isExact bool) (string, error) {
+func (x *Repository) updateQuantityOfProduct(userID uuid.UUID, productID string, quantity int, isExact bool) (string, int, error) {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	//
 	key := fmt.Sprintf("cart:%s:%s", userID, productID)
-	quantityStr, err := rdb.HGet(ctx, key, "quantity").Result()
+	//get product quantitiy from cart
+	productQuantity, err := getProductQuantity(ctx, key)
 	if err != nil {
-		return "", errors.New("product isn't in your cart")
+		return "", 0, err
 	}
 
-	productQuantity, err := strconv.Atoi(quantityStr)
-	if err != nil {
-		return "", err
-	}
+	//is arrange exact or not
 	if isExact {
-		//todo
-		// fix here isnt arrange the quantity
-		err := rdb.HSet(ctx, key, "quantity", quantity).Err()
-		if err != nil {
-			return "", err
-		}
-		return "quantity arranged", nil
+		return setExactQuantity(ctx, key, quantity, productQuantity)
 	}
+	return updateQuantity(ctx, key, quantity, productQuantity)
 
-	if quantity == -1 && productQuantity <= 1 {
-		//del product from cart
-		err := rdb.Del(ctx, key).Err()
-		if err != nil {
-			return "", err
-		}
-		return "item removed from your cart", nil
-	} else if quantity == -1 {
-		err := rdb.HIncrBy(ctx, key, "quantity", -1).Err()
-		if err != nil {
-			return "", err
-		}
-		return "quantity decreased", nil
-	} else if quantity == 1 {
-		err := rdb.HIncrBy(ctx, key, "quantity", 1).Err()
-		if err != nil {
-			return "", err
-		}
-		return "quantity increased", nil
-	} else if quantity >= 1 && !isExact {
-		err := rdb.HIncrBy(ctx, key, "quantity", int64(quantity)).Err()
-		if err != nil {
-			return "", err
-		}
-		return "quantity increased", nil
-	}
-	return "", nil
 }
 
 //!
@@ -191,24 +158,34 @@ func (x *Repository) updateProduct(product UpdateProductType) error {
 
 // !
 // DELETE PRODUCT ON CART
-func (x *Repository) deleteProductOnCart(userID uuid.UUID, productID string) error {
+func (x *Repository) deleteProductOnCart(userID uuid.UUID, productID string) (int, error) {
+	var quantityStr string
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 	key := fmt.Sprintf("cart:%s:%s", userID, productID)
 	data, err := rdb.Keys(ctx, key).Result()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if len(data) > 0 {
+		quantityStr, err = rdb.HGet(ctx, key, "quantity").Result()
+		if err != nil {
+			return 0, err
+		}
+
 		_, err := rdb.HDel(ctx, key, "name", "quantity", "price").Result()
 		if err != nil {
-			return err
+			return 0, err
 		}
 	} else {
-		return errors.New("product couldn't find in your cart")
+		return 0, errors.New("product couldn't find in your cart")
 	}
-	return nil
+	quantity, err := strconv.Atoi(quantityStr)
+	if err != nil {
+		return 0, err
+	}
+	return quantity, nil
 }
 
 // !
@@ -240,4 +217,59 @@ func (x *Repository) deleteUserCart(userID uuid.UUID) error {
 		}
 	}
 	return nil
+}
+
+func getProductQuantity(ctx context.Context, key string) (int, error) {
+	quantityStr, err := rdb.HGet(ctx, key, "quantity").Result()
+	if err != nil {
+		return 0, errors.New("product isn't in your cart")
+	}
+
+	return strconv.Atoi(quantityStr)
+}
+
+// set exact
+func setExactQuantity(ctx context.Context, key string, quantity int, productQuantity int) (string, int, error) {
+	err := rdb.HSet(ctx, key, "quantity", quantity).Err()
+	if err != nil {
+		return "", 0, err
+	}
+
+	return "quantity exactlye arranged", quantity - productQuantity, nil
+}
+
+func updateQuantity(ctx context.Context, key string, quantity, productQuantity int) (string, int, error) {
+
+	switch {
+
+	case quantity == -1 && productQuantity <= 1:
+		//del product from cart
+		err := rdb.Del(ctx, key).Err()
+		if err != nil {
+			return "", 0, err
+		}
+		return "item removed from your cart", -1, nil
+
+	case quantity == -1:
+		err := rdb.HIncrBy(ctx, key, "quantity", -1).Err()
+		if err != nil {
+			return "", 0, err
+		}
+		return "quantity decreased", -1, nil
+
+	case quantity == 1:
+		err := rdb.HIncrBy(ctx, key, "quantity", 1).Err()
+		if err != nil {
+			return "", 0, err
+		}
+		return "quantity increased", 1, nil
+
+	case quantity > 1:
+		err := rdb.HIncrBy(ctx, key, "quantity", int64(quantity)).Err()
+		if err != nil {
+			return "", 0, err
+		}
+		return "quantity increased", quantity, nil
+	}
+	return "", 0, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -51,6 +52,18 @@ func (x *Services) checkOut(userID uuid.UUID, addressID uuid.UUID) error {
 	if err != nil {
 		log.Fatalf("Failed to publish message %v", err)
 	}
+
+	for _, cartProduct := range cart.Products {
+		err = publishInventoryData(ch, "inventory.sold", InventoryMessage{
+			ProductID: cartProduct.ProductID.Hex(),
+			Quantity:  cartProduct.Quantity,
+		})
+	}
+
+	if err != nil {
+		return err
+	}
+
 	//clear the cart
 	err = repo.deleteUserCart(userID)
 	if err != nil {
@@ -67,6 +80,15 @@ func (x *Services) addToCart(userID uuid.UUID, product CartItem) error {
 	if err != nil {
 		return err
 	}
+	//inventory transactions
+	err = publishInventoryData(ch, "inventory.reserve", InventoryMessage{
+		ProductID: product.ProductID.Hex(),
+		Quantity:  product.Quantity,
+	})
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -76,7 +98,21 @@ func (x *Services) updateQuantityOfProduct(userID uuid.UUID, productID string, q
 		return "", err
 	}
 
-	msg, err := repo.updateQuantityOfProduct(userID, productID, productQuantity, isExact)
+	if productQuantity < 1 && isExact {
+		return "", errors.New("minimum quantity should be 1")
+	} 
+
+	msg, diff, err := repo.updateQuantityOfProduct(userID, productID, productQuantity, isExact)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("Difference is", diff)
+
+	err = publishInventoryData(ch, "inventory.reserve", InventoryMessage{
+		ProductID: productID,
+		Quantity:  diff,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -86,19 +122,22 @@ func (x *Services) updateQuantityOfProduct(userID uuid.UUID, productID string, q
 // !
 // DELETE ITEM ON CART
 func (x *Services) deleteProductOnCart(userID uuid.UUID, productID string) error {
-	err := repo.deleteProductOnCart(userID, productID)
+	quantity, err := repo.deleteProductOnCart(userID, productID)
 	if err != nil {
 		return err
 	}
-
+	err = publishInventoryData(ch, "inventory.cancel", InventoryMessage{ProductID: productID, Quantity: quantity})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-//!
-//UPDATE PRODUCT ON CART
-func (x *Services) updateProduct(product UpdateProductType) error{
+// !
+// UPDATE PRODUCT ON CART
+func (x *Services) updateProduct(product UpdateProductType) error {
 	err := repo.updateProduct(product)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	return nil

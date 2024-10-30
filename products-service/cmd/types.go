@@ -11,6 +11,7 @@ type NewProduct struct {
 	Brand   string    `json:"brand" bson:"brand"`
 	Content string    `json:"content" bson:"content"`
 	Price   float64   `json:"price" bson:"price"`
+	Stock   int       `json:"stock"`
 	AddedBy uuid.UUID `json:"added_by,omitempty" bson:"added_by"`
 }
 type NewProductBSON struct {
@@ -19,6 +20,11 @@ type NewProductBSON struct {
 	Content string           `json:"content" bson:"content"`
 	Price   float64          `json:"price" bson:"price"`
 	AddedBy primitive.Binary `json:"added_by,omitempty" bson:"added_by"`
+}
+
+type ProductInventoryType struct {
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
 }
 
 type GetProduct struct {
