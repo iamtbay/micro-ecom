@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type Repository struct{}
@@ -25,27 +25,10 @@ func (x *Repository) getOrder(orderUUID uuid.UUID) (Order, error) {
 	//query
 	query := `SELECT * FROM orders WHERE id=$1 and is_active=TRUE`
 
-	var orderInfo Order
-	var productsJSON []byte
 	//
-	err := conn.QueryRow(ctx, query, orderUUID).Scan(
-		&orderInfo.OrderID,
-		&orderInfo.CustomerID,
-		&productsJSON,
-		&orderInfo.AddressID,
-		&orderInfo.TotalPrice,
-		&orderInfo.OrderDate,
-		&orderInfo.IsActive,
-	)
-	if err != nil {
-		return Order{}, err
-	}
+	row := conn.QueryRow(ctx, query, orderUUID)
+	return x.scanOrderToVariable(row)
 
-	err = json.Unmarshal(productsJSON, &orderInfo.Products)
-	if err != nil {
-		return Order{}, err
-	}
-	return orderInfo, nil
 }
 
 // !
@@ -58,28 +41,14 @@ func (x *Repository) getAllOrdersByUserID(userID uuid.UUID) ([]*Order, error) {
 	//query
 	query := `SELECT * FROM orders WHERE user_id=$1 AND is_active=TRUE`
 	rows, err := conn.Query(ctx, query, userID)
-	fmt.Println(rows)
+
 	if err != nil {
 		return []*Order{}, err
 	}
 	//scan to file
 	var orders []*Order
 	for rows.Next() {
-		var order Order
-		var products []byte
-		err := rows.Scan(
-			&order.OrderID,
-			&order.CustomerID,
-			&products,
-			&order.AddressID,
-			&order.TotalPrice,
-			&order.OrderDate,
-			&order.IsActive,
-		)
-		if err != nil {
-			return []*Order{}, err
-		}
-		err = json.Unmarshal(products, &order.Products)
+		order, err := x.scanOrderToVariable(rows)
 		if err != nil {
 			return []*Order{}, err
 		}
@@ -101,7 +70,6 @@ func (x *Repository) newOrder(order Order, productsJson []byte) error {
 			`
 	_, err := conn.Exec(ctx, query, order.CustomerID, productsJson, order.AddressID, order.TotalPrice)
 	if err != nil {
-		fmt.Println("Err? here", err)
 		return err
 	}
 
@@ -124,4 +92,28 @@ func (x *Repository) deleteOrder(orderID, userID uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+// !
+// SCAN ORDER TO VARIABLE
+func (x *Repository) scanOrderToVariable(row pgx.Row) (Order, error) {
+	var orderInfo Order
+	var productsJSON []byte
+	err := row.Scan(
+		&orderInfo.OrderID,
+		&orderInfo.CustomerID,
+		&productsJSON,
+		&orderInfo.AddressID,
+		&orderInfo.TotalPrice,
+		&orderInfo.OrderDate,
+		&orderInfo.IsActive,
+	)
+	if err != nil {
+		return Order{}, err
+	}
+	err = json.Unmarshal(productsJSON, &orderInfo.Products)
+	if err != nil {
+		return Order{}, err
+	}
+	return orderInfo, nil
 }

@@ -22,16 +22,22 @@ func (x *Handlers) newProductStock(c *gin.Context) {
 
 	err := c.BindJSON(&product)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading product informations",
+		})
 		return
 	}
 
 	err = services.newProductStock(product)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while adding stock",
+		})
 		return
 	}
-	c.JSON(http.StatusBadRequest, gin.H{"message": "Succesfully added!"})
+	c.JSON(http.StatusOK, gin.H{"message": "Succesfully added!", "data": nil})
 }
 
 // !
@@ -41,11 +47,14 @@ func (x *Handlers) getStock(c *gin.Context) {
 
 	data, err := services.getStock(productID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while getting stock",
+		})
 		return
 	}
 
-	c.JSON(200, gin.H{"msg": "get stock", "data": data})
+	c.JSON(200, gin.H{"message": "Stock got succesfully", "data": data})
 }
 
 // !
@@ -56,16 +65,22 @@ func (x *Handlers) productReStock(c *gin.Context) {
 	product.ProductID = c.Param("id")
 	err := c.BindJSON(&product)
 	if err != nil {
-		c.JSON(200, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading product informations",
+		})
 		return
 	}
 	err = services.productReStock(product)
 	if err != nil {
-		c.JSON(200, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while adding product stock",
+		})
 		return
 	}
 
-	c.JSON(200, gin.H{"msg": "product re stock"})
+	c.JSON(200, gin.H{"message": "Stock is updated"})
 }
 
 // !
@@ -74,17 +89,24 @@ func (x *Handlers) cancelReservation(c *gin.Context) {
 	var product ProductData
 	err := c.BindJSON(&product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading product informations",
+		})
 		return
 	}
 
 	err = services.cancelReservation(product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while cancelling a reservation",
+		})
 		return
+		
 	}
 
-	c.JSON(400, gin.H{"message": "succesfully cancelled"})
+	c.JSON(200, gin.H{"message": "Product successfully cancelled from reservation queue"})
 }
 
 // !
@@ -94,16 +116,23 @@ func (x *Handlers) updateStockViaReserved(c *gin.Context) {
 	product.ProductID = c.Param("id")
 	err := c.BindJSON(&product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading product informations",
+		})
 		return
+
+		
 	}
 	err = services.updateStockViaReserved(product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while a product registering on reservation queue",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Succesfully reserved!"})
-
 }
 
 // !
@@ -113,12 +142,18 @@ func (x *Handlers) updateStockViaSold(c *gin.Context) {
 	product.ProductID = c.Param("id")
 	err := c.BindJSON(&product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading product informations",
+		})
 		return
 	}
 	err = services.updateStockViaSold(product)
 	if err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while product updating as sold",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Succesfully marked as sold!"})

@@ -123,3 +123,28 @@ func getCookie(c *gin.Context) (string, error) {
 	}
 	return token, nil
 }
+
+func checkSignUpCredentials(userInfo UserBasicInfo) error {
+	if !isValidEmail(userInfo.Email) {
+		return errors.New("invalid e-mail")
+	} else if !isValidPassword(userInfo.Password) {
+		return errors.New("invalid password")
+	} else if !isValidName(userInfo.Name) {
+		return errors.New("invalid name")
+	} else if !isValidName(userInfo.Surname) {
+		return errors.New("invalid surname")
+	}
+	return nil
+}
+
+func checkEditCredentials(userInfo UserBasicInfo) error {
+	//check credentials
+	if !isValidEmail(userInfo.Email) {
+		return errors.New("invalid e-mail")
+	} else if !isValidName(userInfo.Name) {
+		return errors.New("invalid name")
+	} else if !isValidName(userInfo.Surname) {
+		return errors.New("invalid surname")
+	}
+	return nil
+}

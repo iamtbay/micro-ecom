@@ -30,6 +30,7 @@ func (x *Handler) getOrdersByUserID(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
+			"message": "Error while getting orders",
 		})
 		return
 	}
@@ -49,13 +50,17 @@ func (x *Handler) getSingleOrder(c *gin.Context) {
 	data, err := services.getSingleOrder(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while getting order",
 		})
 		return
 	}
 
 	//return response
-	c.JSON(200, data)
+	c.JSON(200, gin.H{
+		"message": "Order found",
+		"data":    data,
+	})
 }
 
 // !
@@ -65,31 +70,28 @@ func (x *Handler) newOrder(c *gin.Context) {
 	err := c.BindJSON(&order)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while reading order informations",
 		})
 		return
 	}
 
 	//check user
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
+
 	order.CustomerID = userID
 	//services
 	data, err := services.newOrder(order)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while creating a new order",
 		})
 		return
 	}
 
 	c.JSON(200, gin.H{
-		"message": "succesfully ordered",
+		"message": "Ordered successfully",
 		"data":    data,
 	})
 }
@@ -98,22 +100,18 @@ func (x *Handler) newOrder(c *gin.Context) {
 // DELETE ORDER
 func (x *Handler) deleteOrder(c *gin.Context) {
 	orderID := c.Param("id")
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	err = services.deleteOrder(orderID, userID)
+	userID, _ := isCookieValid(c)
+
+	err := services.deleteOrder(orderID, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while deleting order",
 		})
 		return
 	}
 
 	c.JSON(200, gin.H{
-		"message": "Succesfully deleted",
+		"message": "Order succesfully deleted",
 	})
 }

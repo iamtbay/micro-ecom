@@ -4,3 +4,4 @@
 2. Check the error messages and make it more sensible
 3. inventory servive should check the available stock prevent to down -s.
 4. Inventory service check only by admin? 
+5. add a Search and a filtering system. W/elasticsearch maybe

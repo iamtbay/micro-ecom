@@ -26,15 +26,12 @@ func (x *Services) getProductReviewsByProductID(productIDStr string) ([]*GetRevi
 	if err != nil {
 		return  []*GetReview{}, err
 	}
-
-
 	return reviews, nil
 }
 
 // !
 // GET REVIEW BY ID
 func (x *Services) getReviewByID(reviewIDStr string) (*GetReview, error) {
-
 	reviewID, err := primitive.ObjectIDFromHex(reviewIDStr)
 	if err != nil {
 		return &GetReview{}, err

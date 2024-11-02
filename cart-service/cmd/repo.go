@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Repository struct{}
@@ -35,19 +34,14 @@ func (x *Repository) getCart(userID uuid.UUID) (CartOrder, error) {
 	var totalPrice float64
 	var products []CartItem
 	for _, key := range cartData {
-		keyIDs := strings.Split(key, ":")
-		//
-		var product CartItem
 		productRd, err := rdb.HGetAll(ctx, key).Result()
-		fmt.Println(productRd)
+
+		keyIDs := strings.Split(key, ":")
 		if err != nil {
 			return CartOrder{}, err
 		}
 
-		product.Name = productRd["name"]
-		product.ProductID, _ = primitive.ObjectIDFromHex(keyIDs[len(keyIDs)-1])
-		product.Quantity, _ = strconv.Atoi(productRd["quantity"])
-		product.Price, _ = strconv.ParseFloat(productRd["price"], 64)
+		product := writeOnProduct(productRd, keyIDs[len(keyIDs)-1])
 		totalPrice += product.Price * float64(product.Quantity)
 		products = append(products, product)
 	}
@@ -75,7 +69,8 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 	//check product is already in cart or not
 	if exists == 0 {
 		err = rdb.HSet(ctx,
-			fmt.Sprintf("cart:%s:%s", userID.String(), product.ProductID.Hex()),
+			fmt.Sprintf(
+			"cart:%s:%s", userID.String(), product.ProductID.Hex()),
 			"name", product.Name,
 			"quantity", product.Quantity,
 			"price", product.Price,
@@ -85,7 +80,6 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 		}
 	} else {
 		//todo
-		// can we change the amount dynamically? especially when coding front-end
 		// maybe create router for increase and decraese
 		err = rdb.HIncrBy(ctx, fmt.Sprintf("cart:%s:%s", userID.String(), product.ProductID.Hex()), "quantity", int64(product.Quantity)).Err()
 
@@ -140,7 +134,6 @@ func (x *Repository) updateProduct(product UpdateProductType) error {
 		}
 
 		for _, key := range keys {
-			fmt.Println(key)
 			err := rdb.HSet(ctx, key, "name", product.Name, "price", product.Price).Err()
 			if err != nil {
 				return err
@@ -235,13 +228,12 @@ func setExactQuantity(ctx context.Context, key string, quantity int, productQuan
 		return "", 0, err
 	}
 
-	return "quantity exactlye arranged", quantity - productQuantity, nil
+	return "quantity arranged", quantity - productQuantity, nil
 }
 
+//
 func updateQuantity(ctx context.Context, key string, quantity, productQuantity int) (string, int, error) {
-
 	switch {
-
 	case quantity == -1 && productQuantity <= 1:
 		//del product from cart
 		err := rdb.Del(ctx, key).Err()

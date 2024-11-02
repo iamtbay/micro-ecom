@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -19,9 +18,7 @@ var repo = initRepo()
 func (x *Services) getSingleOrder(orderID string) (*Order, error) {
 	err := uuid.Validate(orderID)
 	if err != nil {
-		fmt.Println("Hee1")
-		fmt.Println(err.Error())
-		return &Order{}, errors.New("unvalid uuid")
+		return &Order{}, errors.New("unvalid order uuid")
 	}
 	//convert it to uuid
 	orderUUID, err := uuid.Parse(orderID)
@@ -54,7 +51,6 @@ func (x *Services) getAllOrdersByUserID(userID string) ([]*Order, error) {
 // !
 // NEW ORDER
 func (x *Services) newOrder(order Order) (any, error) {
-
 	productsJson, err := json.Marshal(order.Products)
 	if err != nil {
 		return "", err

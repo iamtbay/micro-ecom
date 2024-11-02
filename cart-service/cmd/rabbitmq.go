@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -160,4 +161,57 @@ func consumeMessages() {
 			fmt.Println("consumer did his work!")
 		}
 	}()
+}
+
+func createTemporaryQueue(ch *amqp.Channel, productID string) (string, error) {
+	replyQueue, err := ch.QueueDeclare(
+		"",
+		false,
+		true,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to declare reply queue %s", err)
+	}
+
+	correlationID := uuid.New().String()
+
+	err = ch.Publish(
+		"",
+		"inventory_check_queue",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:   "text/plain",
+			CorrelationId: correlationID,
+			ReplyTo:       replyQueue.Name,
+			Body:          []byte(productID), //change with actual product id
+		},
+	)
+	if err != nil {
+		log.Fatalf("failed to publish message: %s", err)
+	}
+
+	msgs, err := ch.Consume(
+		replyQueue.Name,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to consume messages: %s", err)
+	}
+
+	for msg := range msgs {
+		if msg.CorrelationId == correlationID {
+			return string(msg.Body), nil
+		}
+	}
+	return "", nil
 }

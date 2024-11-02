@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Services struct{}
@@ -28,22 +27,21 @@ func (x *Services) checkUser(cookie string) (UserInfoDB, error) {
 	return userInfo, nil
 }
 
+// !
 // LOGIN SERVICE
 func (x *Services) login(userInfo UserBasicInfo) (string, UserInfoDB, error) {
 	//check the user infos is okay or lack?
 	if !isValidEmail(userInfo.Email) {
-		return "", UserInfoDB{}, errors.New("invalid email")
+		return "", UserInfoDB{}, errors.New("invalid credentials")
 	}
 	//MAKE DB TRANSACTIONS
 	userInfoDB, err := repo.login(&userInfo)
 	if err != nil {
-		fmt.Println("Error service", err)
 		return "", UserInfoDB{}, err
 	}
 	//IS PASSWORD CORRECT?
 	if !isPasswordCorrect(userInfoDB.Password, userInfo.Password) {
-		fmt.Println(userInfoDB.Password, userInfo.Password)
-		return "", UserInfoDB{}, errors.New("invalid credentials 1")
+		return "", UserInfoDB{}, errors.New("invalid credentials")
 	}
 
 	//CREATE JWT
@@ -66,19 +64,15 @@ func (x *Services) login(userInfo UserBasicInfo) (string, UserInfoDB, error) {
 		nil
 }
 
+// !
 // SIGNUP SERVICE
 func (x *Services) signup(userInfo UserBasicInfo) error {
 	//CHECK USER'S INFO
-	if !isValidEmail(userInfo.Email) {
-		return errors.New("invalid e-mail")
-	} else if !isValidPassword(userInfo.Password) {
-		return errors.New("invalid password")
-	} else if !isValidName(userInfo.Name) {
-		return errors.New("invalid name")
-	} else if !isValidName(userInfo.Surname) {
-		return errors.New("invalid surname")
+	err := checkSignUpCredentials(userInfo)
+	if err != nil {
+		return err
 	}
-	var err error
+
 	//HASH PASSWORD
 	userInfo.Password, err = hashPassword(userInfo.Password)
 	if err != nil {
@@ -100,18 +94,18 @@ func (x *Services) edit(userInfo UserBasicInfo, token string) error {
 	//parse jwt and check email is equal or not?
 	userID, err := parseJWT(token)
 	if err != nil {
-		return errors.New("something went wrong,parsejwt")
+		return err
 	}
+
 	//check email
 	userInfoDB, err := repo.getUserInfoDB(userID)
 	if err != nil {
-		fmt.Println("Error get user info")
 		return err
 	}
 
 	//is user-id equal?
 	if userInfoDB.ID != userID {
-		return errors.New("user id and jwt user id isn't equal")
+		return errors.New("unauthorized user")
 	}
 
 	//check is email registered for anyother people or not
@@ -119,13 +113,10 @@ func (x *Services) edit(userInfo UserBasicInfo, token string) error {
 	if err != nil {
 		return err
 	}
-	//check credentials
-	if !isValidEmail(userInfo.Email) {
-		return errors.New("invalid e-mail")
-	} else if !isValidName(userInfo.Name) {
-		return errors.New("invalid name")
-	} else if !isValidName(userInfo.Surname) {
-		return errors.New("invalid surname")
+
+	err = checkEditCredentials(userInfo)
+	if err != nil {
+		return err
 	}
 
 	//SAVE NEW INFOS
@@ -143,15 +134,13 @@ func (x *Services) changePassword(newPassword string, token string) error {
 	//parse jwt and check email is equal or not?
 	userID, err := parseJWT(token)
 	if err != nil {
-		return errors.New("something went wrong,parsejwt")
+		return err
 	}
 
-	fmt.Println("new pass string", newPassword)
 	//hash password
 	newPassword, err = hashPassword(newPassword)
-	fmt.Println("new pass service", newPassword)
 	if err != nil {
-		return errors.New("something went wrong,hash password")
+		return err
 	}
 
 	//SAVE NEW INFOS

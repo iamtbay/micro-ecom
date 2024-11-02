@@ -28,7 +28,7 @@ func connectRabbitMQ() {
 	)
 	failOnErr("failed while declaring an exchange", err)
 
-	queues := []string{"inventory_reserve_queue", "inventory_cancel_queue", "inventory_sold_queue", "inventory_new_product_queue"}
+	queues := []string{"inventory_reserve_queue", "inventory_cancel_queue", "inventory_sold_queue", "inventory_new_product_queue", "inventory_check_queue"}
 	for _, queue := range queues {
 		_, err := ch.QueueDeclare(
 			queue,
@@ -45,6 +45,7 @@ func connectRabbitMQ() {
 		"inventory_cancel_queue":      "inventory.cancel",
 		"inventory_sold_queue":        "inventory.sold",
 		"inventory_new_product_queue": "inventory.new",
+		"inventory_check_queue":       "inventory.check",
 	}
 	for queue, key := range queueBindings {
 
@@ -63,6 +64,7 @@ func connectRabbitMQ() {
 	go consumeCancelMessages(ch)
 	go consumeSoldMessages(ch)
 	go consumeNewProductMessages(ch)
+	go consumeCheckMessage(ch)
 
 }
 
@@ -176,5 +178,43 @@ func consumeNewProductMessages(ch *amqp091.Channel) {
 func failOnErr(msg string, err error) {
 	if err != nil {
 		log.Panicf("%s: %s", msg, err)
+	}
+}
+
+func consumeCheckMessage(ch *amqp091.Channel) {
+	msgs, err := ch.Consume(
+		"inventory_check_queue",
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to consume check messages: %s", err)
+	}
+
+	for msg := range msgs {
+		stockAvailable, err := services.checkStock(string(msg.Body))
+		if err != nil {
+			log.Fatalf("Failed to consume checkstock messages: %s", err)
+		}
+
+		err = ch.Publish(
+			"",
+			msg.ReplyTo,
+			false,
+			false,
+			amqp091.Publishing{
+				ContentType:   "text/plain",
+				CorrelationId: msg.CorrelationId,
+				Body:          stockAvailable,
+			},
+		)
+		if err != nil {
+			log.Fatalf("Failed to consume checkstock messages: %s", err)
+		}
+
 	}
 }

@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func isCookieValid(c *gin.Context) (uuid.UUID, error) {
@@ -35,4 +37,13 @@ func parseJWT(tokenString string) (uuid.UUID, error) {
 	} else {
 		return uuid.UUID{}, err
 	}
+}
+
+func writeOnProduct(productOnRedis map[string]string, keyID string) CartItem {
+	var product CartItem
+	product.Name = productOnRedis["name"]
+	product.ProductID, _ = primitive.ObjectIDFromHex(keyID)
+	product.Quantity, _ = strconv.Atoi(productOnRedis["quantity"])
+	product.Price, _ = strconv.ParseFloat(productOnRedis["price"], 64)
+	return product
 }

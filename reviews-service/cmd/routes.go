@@ -8,8 +8,8 @@ func initRoutes(r *gin.Engine) {
 	handler := initHandler()
 
 	route.GET("/product/:id", handler.GetProductReviewsByProductID)
-	route.GET("/:id", handler.GetReviewByID)
-	route.POST("/:id", handler.NewReview)
-	route.PATCH("/:id", handler.EditReviewByReviewID)
-	route.DELETE("/:id", handler.DeleteReviewByReviewID)
+	route.GET("/:id", checkCookie(), handler.GetReviewByID)
+	route.POST("/:id", checkCookie(), handler.NewReview)
+	route.PATCH("/:id", checkCookie(), handler.EditReviewByReviewID)
+	route.DELETE("/:id", checkCookie(), handler.DeleteReviewByReviewID)
 }

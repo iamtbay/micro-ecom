@@ -24,9 +24,9 @@ func main() {
 
 	connectDB()
 	initRoutes(r)
-
-	var err error
+	
 	//connect rabbitmq
+	var err error
 	ch, err = connectRabbitMQ()
 	if err != nil {
 		log.Fatalf("Failed to connect to rabbitmq %v", err)

@@ -16,7 +16,7 @@ var conn *pgxpool.Pool
 func main() {
 	r := gin.Default()
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("error loading .env file")
+		log.Fatal("error while loading .env file")
 	}
 	//connect db
 	connectDB()

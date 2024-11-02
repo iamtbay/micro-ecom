@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +17,7 @@ func initRepository() *Repository {
 	return &Repository{}
 }
 
+// !
 // CHECK USER
 func (x *Repository) checkUser(userID uuid.UUID) (UserInfoDB, error) {
 	//ctx
@@ -36,7 +36,7 @@ func (x *Repository) checkUser(userID uuid.UUID) (UserInfoDB, error) {
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return UserInfoDB{}, errors.New("invalid email or password(pass)")
+			return UserInfoDB{}, errors.New("user couldn't verify")
 		}
 		return UserInfoDB{}, err
 	}
@@ -45,6 +45,7 @@ func (x *Repository) checkUser(userID uuid.UUID) (UserInfoDB, error) {
 
 }
 
+// !
 // LOGIN
 func (x *Repository) login(userInfo *UserBasicInfo) (UserInfoDB, error) {
 	//ctx
@@ -71,6 +72,7 @@ func (x *Repository) login(userInfo *UserBasicInfo) (UserInfoDB, error) {
 
 }
 
+// !
 // SIGN UP
 func (x *Repository) signup(userInfo *UserBasicInfo) error {
 	//ctx
@@ -82,7 +84,7 @@ func (x *Repository) signup(userInfo *UserBasicInfo) error {
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == "23505" {
-				return errors.New("email is already in use, please try another")
+				return errors.New("email is already in use, please try another email")
 			}
 		}
 		return err
@@ -90,6 +92,7 @@ func (x *Repository) signup(userInfo *UserBasicInfo) error {
 	return nil
 }
 
+// !
 // EDIT
 func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
 	//ctx
@@ -98,7 +101,8 @@ func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
 	query := `UPDATE users
 			SET 
 				name=$1, surname=$2, email=$3
-			WHERE user_id=$4`
+			WHERE 
+				user_id=$4`
 	_, err := conn.Exec(ctx, query,
 		newUserInfo.Name,
 		newUserInfo.Surname,
@@ -106,11 +110,12 @@ func (x *Repository) edit(userID uuid.UUID, newUserInfo UserBasicInfo) error {
 		userID,
 	)
 	if err != nil {
-		return errors.New("something went wrong")
+		return errors.New("something went wrong while infos are updating")
 	}
 	return nil
 }
 
+// !
 // CHANGE PASSWORD
 func (x *Repository) changePassword(newPassword string, userID uuid.UUID) error {
 	//ctx
@@ -124,11 +129,12 @@ func (x *Repository) changePassword(newPassword string, userID uuid.UUID) error 
 		userID,
 	)
 	if err != nil {
-		return errors.New("something went wrong")
+		return errors.New("something went wrong while password is updating")
 	}
 	return nil
 }
 
+// !
 // DELETE USER
 func (x *Repository) delete(userID uuid.UUID) error {
 	//ctx
@@ -148,8 +154,8 @@ func (x *Repository) getUserInfoDB(userID uuid.UUID) (UserInfoDB, error) {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	//query
 	query := `SELECT * FROM users WHERE user_id=$1`
-	fmt.Println("user id is", userID)
 	var userInfo UserInfoDB
 	err := conn.QueryRow(ctx, query, userID).Scan(
 		&userInfo.ID,
@@ -160,7 +166,6 @@ func (x *Repository) getUserInfoDB(userID uuid.UUID) (UserInfoDB, error) {
 		&userInfo.IsAdmin,
 	)
 	if err != nil {
-		fmt.Println(err)
 		return userInfo, err
 	}
 	return userInfo, nil
@@ -184,8 +189,7 @@ func (x *Repository) checkEmailIsUnique(email string, userID uuid.UUID) error {
 		return err
 	}
 	if dbUserID != userID {
-		fmt.Println(dbUserID, userID)
-		return errors.New("error isn't equal user ids")
+		return errors.New("email in in use")
 	}
 	return nil
 }

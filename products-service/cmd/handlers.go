@@ -23,13 +23,13 @@ func (x *ProductsHandler) getSingleProduct(c *gin.Context) {
 	//get item
 	productInfo, err := services.getSingleProduct(id)
 	if err != nil {
-		errJSON(http.StatusBadRequest, err, "Something went wrong", c)
+		errJSON(http.StatusBadRequest, err, "Something went wrong while getting product", c)
 		return
 	}
 
 	//return
 	c.JSON(200, gin.H{
-		"message": "Succesful",
+		"message": "Product found succesfully",
 		"data":    productInfo,
 	})
 
@@ -41,7 +41,7 @@ func (x *ProductsHandler) getProducts(c *gin.Context) {
 	page := c.Query("page")
 	pageInt, err := strconv.Atoi(page)
 	if err != nil {
-		errJSON(http.StatusBadRequest, err, "something went wrong while page converting to int", c)
+		errJSON(http.StatusBadRequest, err, "Something went wrong while page value converting ", c)
 		return
 	}
 
@@ -49,16 +49,18 @@ func (x *ProductsHandler) getProducts(c *gin.Context) {
 	products, pageInfos, err := services.getProducts(int64(pageInt))
 	if err != nil {
 
-		errJSON(http.StatusBadRequest, err, "something went wrong", c)
+		errJSON(http.StatusBadRequest, err, "something went wrong while getting products", c)
 		return
 	}
 
 	c.JSON(200, gin.H{
-		"page":                pageInfos.CurrentPage,
-		"totalPage":           pageInfos.TotalPage,
-		"total_product_count": pageInfos.TotalProductCount,
-		"message":             fmt.Sprintf("%v products found", len(products)),
-		"data":                products,
+		"pages": gin.H{
+			"page":                pageInfos.CurrentPage,
+			"totalPage":           pageInfos.TotalPage,
+			"total_product_count": pageInfos.TotalProductCount,
+		},
+		"message": fmt.Sprintf("%v products found", len(products)),
+		"data":    products,
 	})
 
 }
@@ -68,37 +70,25 @@ func (x *ProductsHandler) getProducts(c *gin.Context) {
 func (x *ProductsHandler) addProduct(c *gin.Context) {
 	var productInfo NewProduct
 	//check cookie is valid?
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//bind json
-	err = c.BindJSON(&productInfo)
+	err := c.BindJSON(&productInfo)
 	productInfo.AddedBy = userID
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Something went wrong",
-			"error":   err.Error(),
-		})
+		errJSON(http.StatusInternalServerError, err, "Something went wrong while reading product informations", c)
 		return
 	}
 
 	//service
 	err = services.addProduct(&productInfo)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Something went wrong service",
-			"error":   err.Error(),
-		})
+		errJSON(http.StatusInternalServerError, err, "Something went wrong while adding product", c)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Succesfully added",
+		"message": "Product succesfully added",
 		"data":    productInfo,
 	})
 }
@@ -107,18 +97,12 @@ func (x *ProductsHandler) addProduct(c *gin.Context) {
 func (x *ProductsHandler) editProduct(c *gin.Context) {
 	var productInfo NewProduct
 	//check cookie is valid?
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
+	userID, _ := isCookieValid(c)
+	
 	//bind json
-	err = c.BindJSON(&productInfo)
+	err := c.BindJSON(&productInfo)
 	if err != nil {
-		errJSON(http.StatusInternalServerError, err, "Something went wrong while binding json", c)
+		errJSON(http.StatusInternalServerError, err, "Something went wrong while reading product informatins", c)
 		return
 	}
 
@@ -134,7 +118,7 @@ func (x *ProductsHandler) editProduct(c *gin.Context) {
 
 	//return
 	c.JSON(http.StatusOK, gin.H{
-		"message": "succesfully edited",
+		"message": "Product succesfully updated",
 		"data":    newProductInfo,
 	})
 }
@@ -145,24 +129,17 @@ func (x *ProductsHandler) deleteProduct(c *gin.Context) {
 	id := c.Param("id")
 
 	//check cookie is valid?
-	userID, err := isCookieValid(c)
-	// if user id not equal to prodyct addedby id don't allow to delete the item.
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
+	userID, _ := isCookieValid(c)
+	
 	//delete product
-	err = services.deleteProduct(id, userID)
+	err := services.deleteProduct(id, userID)
 	if err != nil {
 		errJSON(http.StatusInternalServerError, err, "Something went wrong while deleting product", c)
 		return
 	}
 	//return
 	c.JSON(http.StatusOK, gin.H{
-		"message": "succesfully deleted",
+		"message": "Product succesfully deleted",
 		"data":    nil,
 	})
 }

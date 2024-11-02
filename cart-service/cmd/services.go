@@ -34,8 +34,6 @@ func (x *Services) getCart(userID uuid.UUID) (CartOrder, error) {
 // GET CART
 func (x *Services) checkOut(userID uuid.UUID, addressID uuid.UUID) error {
 
-	//check prices are there any price changed or not?
-
 	//get items on user's cart
 	cart, err := repo.getCart(userID)
 	if err != nil {
@@ -76,7 +74,22 @@ func (x *Services) checkOut(userID uuid.UUID, addressID uuid.UUID) error {
 // !
 // ADD TO CART
 func (x *Services) addToCart(userID uuid.UUID, product CartItem) error {
-	err := repo.addToCart(userID, product)
+	//check product is available?
+	stockStr, err := createTemporaryQueue(ch, product.ProductID.Hex())
+	if err != nil {
+		return err
+	}
+
+	stock, err := strconv.Atoi(stockStr)
+	if err != nil {
+		return err
+	}
+
+	if product.Quantity > stock {
+		return fmt.Errorf("only %v items in stock", stock)
+	}
+
+	err = repo.addToCart(userID, product)
 	if err != nil {
 		return err
 	}
@@ -100,14 +113,12 @@ func (x *Services) updateQuantityOfProduct(userID uuid.UUID, productID string, q
 
 	if productQuantity < 1 && isExact {
 		return "", errors.New("minimum quantity should be 1")
-	} 
+	}
 
 	msg, diff, err := repo.updateQuantityOfProduct(userID, productID, productQuantity, isExact)
 	if err != nil {
 		return "", err
 	}
-
-	fmt.Println("Difference is", diff)
 
 	err = publishInventoryData(ch, "inventory.reserve", InventoryMessage{
 		ProductID: productID,

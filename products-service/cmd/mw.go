@@ -11,7 +11,8 @@ func cookieCheck() gin.HandlerFunc {
 		tokenString, err := c.Cookie("accessToken")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Please login first!",
+				"message": "Authentication required. Please log in to access this resource.",
+				"error":   "Authentication error",
 			})
 			c.Abort()
 			return
@@ -20,7 +21,8 @@ func cookieCheck() gin.HandlerFunc {
 		_, err = parseJWT(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized user",
+				"error":   "Unauthorized user",
+				"message": err.Error(),
 			})
 			c.Abort()
 			return

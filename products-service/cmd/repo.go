@@ -55,22 +55,11 @@ func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var product *GetProductBSON
-		if err := cursor.Decode(&product); err != nil {
-			return products, &PageInfo{}, err
-		}
-		uuidFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
+		product, err := x.scanProductToVariable(cursor)
 		if err != nil {
 			return []*GetProduct{}, &PageInfo{}, err
 		}
-		products = append(products, &GetProduct{
-			ID:      product.ID,
-			Name:    product.Name,
-			Brand:   product.Brand,
-			Content: product.Content,
-			Price:   product.Price,
-			AddedBy: uuidFromBinary,
-		})
+		products = append(products, product)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -78,11 +67,8 @@ func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 	}
 
 	//pageInfos
-	pageInfos := &PageInfo{
-		TotalPage:         int(totalCount)/10 + 1,
-		CurrentPage:       int(page),
-		TotalProductCount: int(totalCount),
-	}
+	pageInfos := x.getPageInfos(page, totalCount)
+
 	return products, pageInfos, nil
 
 }
@@ -106,18 +92,12 @@ func (x *Repository) getSingleProduct(id primitive.ObjectID) (*GetProduct, error
 		return &GetProduct{}, errors.New("invalid id")
 	}
 
-	userIDFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
+	produtJSON, err := x.convertProductBSONtoJSON(product)
 	if err != nil {
-		return &GetProduct{}, err
+		return produtJSON, err
 	}
-	return &GetProduct{
-		ID:      product.ID,
-		Name:    product.Name,
-		Brand:   product.Brand,
-		Content: product.Content,
-		Price:   product.Price,
-		AddedBy: userIDFromBinary,
-	}, nil
+
+	return produtJSON, nil
 
 }
 
@@ -142,7 +122,7 @@ func (x *Repository) addProduct(newProduct *NewProduct) (primitive.ObjectID, err
 	}
 	insertedID, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return primitive.NilObjectID, errors.New("couldn't get the insreted id")
+		return primitive.NilObjectID, errors.New("couldn't get the inserted id")
 	}
 
 	return insertedID, nil
@@ -220,4 +200,45 @@ func (x *Repository) checkPage(page, totalCount int64) int64 {
 		page = 1
 	}
 	return page
+}
+
+func (x *Repository) scanProductToVariable(cursor *mongo.Cursor) (*GetProduct, error) {
+	var (
+		productBSON *GetProductBSON
+	)
+
+	if err := cursor.Decode(&productBSON); err != nil {
+		return &GetProduct{}, err
+	}
+
+	productJSON, err := x.convertProductBSONtoJSON(productBSON)
+	if err != nil {
+		return productJSON, err
+	}
+
+	return productJSON, nil
+
+}
+
+func (x *Repository) getPageInfos(page, totalCount int64) *PageInfo {
+	return &PageInfo{
+		TotalPage:         int(totalCount)/10 + 1,
+		CurrentPage:       int(page),
+		TotalProductCount: int(totalCount),
+	}
+}
+
+func (x *Repository) convertProductBSONtoJSON(product *GetProductBSON) (*GetProduct, error) {
+	userIDFromBinary, err := uuid.FromBytes(product.AddedBy.Data)
+	if err != nil {
+		return &GetProduct{}, err
+	}
+	return &GetProduct{
+		ID:      product.ID,
+		Name:    product.Name,
+		Brand:   product.Brand,
+		Content: product.Content,
+		Price:   product.Price,
+		AddedBy: userIDFromBinary,
+	}, nil
 }

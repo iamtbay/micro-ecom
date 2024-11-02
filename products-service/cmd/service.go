@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -50,7 +51,7 @@ func (x *Services) addProduct(newProduct *NewProduct) error {
 	if err != nil {
 		return err
 	}
-	productID, err := repo.addProduct(newProduct) // user id because of added by?
+	productID, err := repo.addProduct(newProduct)
 
 	if err != nil {
 		return err
@@ -87,7 +88,7 @@ func (x *Services) editProduct(id string, newProduct *NewProduct) (*NewProduct, 
 	}
 	err = publishPrice(product)
 	if err != nil {
-		fmt.Println(err)
+		log.Println("Error while publishig price", err)
 	}
 
 	return newProduct, nil

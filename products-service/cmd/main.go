@@ -37,7 +37,7 @@ func main() {
 	}()
 
 	//ROUTES
-	initRotues(r)
+	initRoutes(r)
 	connectRabbitMQ()
 	defer ch.Close()
 

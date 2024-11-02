@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // !
@@ -23,28 +24,17 @@ func (x *Repository) getAddresses(userID uuid.UUID) ([]*GetAddresses, error) {
 	var addresses []*GetAddresses
 
 	for rows.Next() {
-		var address GetAddresses
-		err := rows.Scan(
-			&address.ID,
-			&address.UserID,
-			&address.AddressName,
-			&address.Street,
-			&address.City,
-			&address.State,
-			&address.PostalCode,
-			&address.Country,
-			&address.IsDeleted,
-		)
+		address, err := x.scanAddressToVariable(rows)
 		if err != nil {
 			return addresses, err
 		}
-
 		addresses = append(addresses, &address)
 	}
 	return addresses, nil
 }
 
 // !
+//GET SINGLE ADRESS BY ID
 func (x *Repository) getSingleAddressByID(userID, addressID uuid.UUID) (*GetAddresses, error) {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -52,17 +42,9 @@ func (x *Repository) getSingleAddressByID(userID, addressID uuid.UUID) (*GetAddr
 
 	query := `SELECT * FROM addresses WHERE id=$1 AND user_id=$2 AND is_deleted=FALSE`
 	var address GetAddresses
-	err := conn.QueryRow(ctx, query, addressID, userID).Scan(
-		&address.ID,
-		&address.UserID,
-		&address.AddressName,
-		&address.Street,
-		&address.City,
-		&address.State,
-		&address.PostalCode,
-		&address.Country,
-		&address.IsDeleted,
-	)
+	rows := conn.QueryRow(ctx, query, addressID, userID)
+
+	address, err := x.scanAddressToVariable(rows)
 	if err != nil {
 		return &address, err
 	}
@@ -137,4 +119,25 @@ func (x *Repository) deleteAddressByID(userID, addressID uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+//HELPER
+
+func (x *Repository) scanAddressToVariable(rows pgx.Row) (GetAddresses, error) {
+	var address GetAddresses
+	err := rows.Scan(
+		&address.ID,
+		&address.UserID,
+		&address.AddressName,
+		&address.Street,
+		&address.City,
+		&address.State,
+		&address.PostalCode,
+		&address.Country,
+		&address.IsDeleted,
+	)
+	if err != nil {
+		return GetAddresses{}, err
+	}
+	return address, nil
 }

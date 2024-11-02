@@ -16,24 +16,20 @@ func initAdressesHandler() *AdressesHandler {
 // GET ADDRESSES
 func (x *AdressesHandler) GetAddresses(c *gin.Context) {
 	//get user id
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//
 	addresses, err := services.getAddresses(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while getting adresses",
 		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"data": addresses,
+		"data":    addresses,
+		"message": "Adresses found",
 	})
 
 }
@@ -42,13 +38,7 @@ func (x *AdressesHandler) GetAddresses(c *gin.Context) {
 // GET SINGLE ADDRESS
 func (x *AdressesHandler) GetSingleAddressByID(c *gin.Context) {
 	//get user id
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get param
 	addressIDStr := c.Param("id")
@@ -57,14 +47,16 @@ func (x *AdressesHandler) GetSingleAddressByID(c *gin.Context) {
 	address, err := services.getSingleAddress(userID, addressIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Adress couldn't find",
 		})
 		return
 	}
 
 	//response
 	c.JSON(http.StatusOK, gin.H{
-		"data": address,
+		"data":    address,
+		"message": "Adress found",
 	})
 
 }
@@ -73,20 +65,15 @@ func (x *AdressesHandler) GetSingleAddressByID(c *gin.Context) {
 // ADD ADDRESS
 func (x *AdressesHandler) AddNewAddress(c *gin.Context) {
 	//get user info
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get address infos as json
 	var addressInfo NewAddress
-	err = c.BindJSON(&addressInfo)
+	err := c.BindJSON(&addressInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while reading adress informations",
 		})
 		return
 	}
@@ -96,13 +83,14 @@ func (x *AdressesHandler) AddNewAddress(c *gin.Context) {
 	err = services.addNewAddress(addressInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while adding new adress",
 		})
 		return
 	}
 
 	//response
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "Address created succesfully",
 	})
 
@@ -112,23 +100,18 @@ func (x *AdressesHandler) AddNewAddress(c *gin.Context) {
 // EDIT ADDRESS
 func (x *AdressesHandler) EditAddressByID(c *gin.Context) {
 	// get user info
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get param
 	addressIDStr := c.Param("id")
 
 	// get address infos as json
 	var addressInfo NewAddress
-	err = c.BindJSON(&addressInfo)
+	err := c.BindJSON(&addressInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while reading adress informations",
 		})
 		return
 	}
@@ -152,22 +135,17 @@ func (x *AdressesHandler) EditAddressByID(c *gin.Context) {
 // DELETE ADDRESS
 func (x *AdressesHandler) DeleteAddressByID(c *gin.Context) {
 	// get user info
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get param
 	addressIDStr := c.Param("id")
 
 	//service
-	err = services.deleteAddressByID(addressIDStr, userID)
+	err := services.deleteAddressByID(addressIDStr, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while deleting an adress",
 		})
 		return
 	}

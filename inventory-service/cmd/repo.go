@@ -121,3 +121,18 @@ func (x *Repository) updateStockViaSold(product ProductData) error {
 
 //!
 // CHECK IS AVAILABLE TO SELL
+
+func (x *Repository) checkStock(productID string) (int, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	//
+	var stock int
+	query := `SELECT available_stock FROM inventory WHERE product_id=$1`
+	err := conn.QueryRow(ctx, query, productID).Scan(&stock)
+	if err != nil {
+		return 0, err
+	}
+	return stock, nil
+}

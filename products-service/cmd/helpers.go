@@ -66,6 +66,6 @@ func parseJWT(tokenString string) (uuid.UUID, error) {
 	if claims, ok := token.Claims.(*jwtClaims); ok {
 		return claims.UserID, nil
 	}
-	return uuid.UUID{}, errors.New("something went wrong while verifying user")
+	return uuid.UUID{}, errors.New("something went wrong while verifying the user")
 
 }

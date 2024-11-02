@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Repository struct {
@@ -29,26 +29,12 @@ func (x *Repository) getProductReviewsByProductID(productID primitive.ObjectID) 
 	}
 	var reviews []*GetReview
 	for cursor.Next(ctx) {
-		var review GetReviewBSON
-		if err := cursor.Decode(&review); err != nil {
-			return reviews, err
-		}
-		userID, err := uuid.FromBytes(review.UserID.Data)
+		review, err := repo.scanReviewsToVariable(cursor)
 		if err != nil {
-			return reviews, err
+			return []*GetReview{}, err
 		}
 		//check here
-		reviews = append(reviews, &GetReview{
-			ReviewID:  review.ReviewID,
-			ProductID: review.ProductID,
-			UserID:    userID, //
-			Name:      review.Name,
-			Surname:   review.Surname,
-			Point:     review.Point,
-			Comment:   review.Comment,
-			Date:      review.Date,
-			IsDeleted: review.IsDeleted,
-		})
+		reviews = append(reviews, review)
 	}
 	return reviews, nil
 }
@@ -60,27 +46,18 @@ func (x *Repository) getReviewByID(reviewID primitive.ObjectID) (*GetReview, err
 	defer cancel()
 
 	filter := bson.M{"_id": reviewID}
-	var review GetReviewBSON
-	err := collection.FindOne(ctx, filter).Decode(&review)
-	if err != nil {
-		return &GetReview{}, err
-	}
-	userID, err := uuid.FromBytes(review.UserID.Data)
+	var reviewBSON GetReviewBSON
+	err := collection.FindOne(ctx, filter).Decode(&reviewBSON)
 	if err != nil {
 		return &GetReview{}, err
 	}
 
-	return &GetReview{
-		ReviewID:  review.ReviewID,
-		ProductID: review.ProductID,
-		UserID:    userID, //
-		Name:      review.Name,
-		Surname:   review.Surname,
-		Point:     review.Point,
-		Comment:   review.Comment,
-		Date:      review.Date,
-		IsDeleted: review.IsDeleted,
-	}, nil
+	review, err := repo.convertProductBSONtoJSON(reviewBSON)
+	if err != nil {
+		return &GetReview{}, err
+	}
+
+	return review, nil
 }
 
 // !
@@ -132,6 +109,37 @@ func (x *Repository) deleteReviewByReviewID(reviewID primitive.ObjectID, userID 
 	if err != nil {
 		return err
 	}
-	fmt.Println("deleted")
 	return nil
+}
+
+// HELPERS
+func (x *Repository) scanReviewsToVariable(cursor *mongo.Cursor) (*GetReview, error) {
+	var reviewBSON GetReviewBSON
+	if err := cursor.Decode(&reviewBSON); err != nil {
+		return &GetReview{}, err
+	}
+
+	review, err := repo.convertProductBSONtoJSON(reviewBSON)
+	if err != nil {
+		return &GetReview{}, err
+	}
+	return review, nil
+}
+
+func (x *Repository) convertProductBSONtoJSON(review GetReviewBSON) (*GetReview, error) {
+	userID, err := uuid.FromBytes(review.UserID.Data)
+	if err != nil {
+		return &GetReview{}, err
+	}
+	return &GetReview{
+		ReviewID:  review.ReviewID,
+		ProductID: review.ProductID,
+		UserID:    userID, //
+		Name:      review.Name,
+		Surname:   review.Surname,
+		Point:     review.Point,
+		Comment:   review.Comment,
+		Date:      review.Date,
+		IsDeleted: review.IsDeleted,
+	}, nil
 }

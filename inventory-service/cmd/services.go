@@ -1,5 +1,9 @@
 package main
 
+import (
+	"strconv"
+)
+
 type Services struct{}
 
 func initServices() *Services {
@@ -17,7 +21,6 @@ func (x *Services) newProductStock(product Product) error {
 	}
 
 	return nil
-
 }
 
 // !
@@ -69,4 +72,17 @@ func (x *Services) updateStockViaSold(product ProductData) error {
 		return err
 	}
 	return nil
+}
+
+// !
+// CHECK STOCK
+func (x *Services) checkStock(productID string) ([]byte, error) {
+
+	stock, err := repo.checkStock(productID)
+
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return []byte(strconv.Itoa(stock)), nil
 }

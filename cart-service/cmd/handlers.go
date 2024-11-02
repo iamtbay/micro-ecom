@@ -19,19 +19,15 @@ var services = initServices()
 // !
 // CHECK OUT
 func (x *Handlers) checkOut(c *gin.Context) {
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
+
 	var addressID CheckOutType
 	//user has to select valid address
-	err = c.BindJSON(&addressID)
+	err := c.BindJSON(&addressID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while reading user informations",
 		})
 		return
 	}
@@ -39,12 +35,13 @@ func (x *Handlers) checkOut(c *gin.Context) {
 	err = services.checkOut(userID, addressID.AddressID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error on checkout",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "ordered succesfully",
 	})
 }
@@ -61,19 +58,14 @@ func (x *Handlers) healthCheck(c *gin.Context) {
 // GET CART
 func (x *Handlers) getCart(c *gin.Context) {
 	//check cookie
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get cart
 	data, err := services.getCart(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while getting users' cart",
 		})
 		return
 	}
@@ -82,6 +74,7 @@ func (x *Handlers) getCart(c *gin.Context) {
 	if len(data.Products) < 1 {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "User cart is empty",
+			"data":    nil,
 		})
 		return
 	}
@@ -99,27 +92,23 @@ func (x *Handlers) getCart(c *gin.Context) {
 func (x *Handlers) addToCart(c *gin.Context) {
 	productID := c.Param("id")
 	//check cookie
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	//get product as a json?
 	var product CartItem
-	err = c.BindJSON(&product)
+	err := c.BindJSON(&product)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while reading user informations",
 		})
 		return
 	}
 	product.ProductID, err = primitive.ObjectIDFromHex(productID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error on product process",
 		})
 		return
 	}
@@ -128,14 +117,15 @@ func (x *Handlers) addToCart(c *gin.Context) {
 	err = services.addToCart(userID, product)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Error while product adding to cart",
 		})
 		return
 
 	}
 
 	//return
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "product added your cart.",
 	})
 }
@@ -147,19 +137,14 @@ func (x *Handlers) updateQuantityOfProduct(c *gin.Context) {
 
 	productID := c.Param("id")
 
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
 
 	var isExact SetExact
-	err = c.BindJSON(&isExact)
+	err := c.BindJSON(&isExact)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": err.Error(),
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   err.Error(),
+			"message": "Error while reading user informations",
 		})
 		return
 	}
@@ -167,6 +152,7 @@ func (x *Handlers) updateQuantityOfProduct(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": err.Error(),
+			"message":"Error while reading product.",
 		})
 		return
 	}
@@ -182,26 +168,22 @@ func (x *Handlers) updateQuantityOfProduct(c *gin.Context) {
 // DELETE CART
 func (x *Handlers) deleteProductOnCart(c *gin.Context) {
 	// check cookie
-	userID, err := isCookieValid(c)
-	if err != nil {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	userID, _ := isCookieValid(c)
+	
 	// check item id
 	productID := c.Param("id")
 
 	// what changed?
-	err = services.deleteProductOnCart(userID, productID)
+	err := services.deleteProductOnCart(userID, productID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
+			"message":"Error while deleting product from cart",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "Product succesfully removed on your cart.",
 	})
 }

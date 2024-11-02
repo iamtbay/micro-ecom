@@ -32,14 +32,21 @@ func cookieRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("accessToken")
 		if err != nil {
-			c.JSON(400, gin.H{"message": "Please login first!"})
+
+			c.JSON(400, gin.H{
+				"message": "Authentication required. Please log in to access this resource.",
+				"error":   "Authentication error",
+			})
 			c.Abort()
 			return
 		}
 		//
 		_, err = parseJWT(token)
 		if err != nil {
-			c.JSON(401, gin.H{"message": "Unauthorized!"})
+			c.JSON(401, gin.H{
+				"message": "Unauthorized user",
+				"error":   err.Error(),
+			})
 			c.Abort()
 			return
 		}

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,9 +8,9 @@ func authRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		loggedIn := checkLoggedIn(c)
 		if !loggedIn {
-			fmt.Println("unauthorized")
 			c.JSON(401, gin.H{
-				"message": "Unauthorized!",
+				"message": "Authentication required. Please log in to access this resource.",
+				"error":   "Authentication error",
 			})
 			c.Abort()
 		}
@@ -20,14 +18,13 @@ func authRequired() gin.HandlerFunc {
 	}
 }
 
-//
 func notAuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		loggedIn := checkLoggedIn(c)
 		if loggedIn {
-			fmt.Println("already logged in")
 			c.JSON(401, gin.H{
-				"message": "you can't use this!",
+				"message": "Unvalid request",
+				"error":   "User has already logged in",
 			})
 			c.Abort()
 		}
@@ -38,7 +35,5 @@ func notAuthRequired() gin.HandlerFunc {
 func checkLoggedIn(c *gin.Context) bool {
 	_, err := getCookie(c)
 
-	//parse jwt here
 	return err == nil
-
 }
