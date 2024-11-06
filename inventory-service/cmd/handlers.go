@@ -42,7 +42,7 @@ func (x *Handlers) newProductStock(c *gin.Context) {
 
 // !
 // GET PRODUCT STOCK BY ID
-func (x *Handlers) getStock(c *gin.Context) {
+func (x *Handlers) getProductStock(c *gin.Context) {
 	productID := c.Param("id")
 
 	data, err := services.getStock(productID)
@@ -59,7 +59,7 @@ func (x *Handlers) getStock(c *gin.Context) {
 
 // !
 // GET PRODUCT STOCK BY ID
-func (x *Handlers) productReStock(c *gin.Context) {
+func (x *Handlers) restockProduct(c *gin.Context) {
 
 	var product Product
 	product.ProductID = c.Param("id")
@@ -85,9 +85,10 @@ func (x *Handlers) productReStock(c *gin.Context) {
 
 // !
 // UPDATE STOCK VIA PRODUCT RESERVED
-func (x *Handlers) cancelReservation(c *gin.Context) {
+func (x *Handlers) cancelStockReservation(c *gin.Context) {
 	var product ProductData
 	err := c.BindJSON(&product)
+	product.ProductID = c.Param("id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),
@@ -103,7 +104,7 @@ func (x *Handlers) cancelReservation(c *gin.Context) {
 			"message": "Error while cancelling a reservation",
 		})
 		return
-		
+
 	}
 
 	c.JSON(200, gin.H{"message": "Product successfully cancelled from reservation queue"})
@@ -111,7 +112,7 @@ func (x *Handlers) cancelReservation(c *gin.Context) {
 
 // !
 // UPDATE STOCK VIA PRODUCT RESERVED
-func (x *Handlers) updateStockViaReserved(c *gin.Context) {
+func (x *Handlers) confirmStockReservation(c *gin.Context) {
 	var product ProductData
 	product.ProductID = c.Param("id")
 	err := c.BindJSON(&product)
@@ -122,7 +123,6 @@ func (x *Handlers) updateStockViaReserved(c *gin.Context) {
 		})
 		return
 
-		
 	}
 	err = services.updateStockViaReserved(product)
 	if err != nil {
@@ -137,7 +137,7 @@ func (x *Handlers) updateStockViaReserved(c *gin.Context) {
 
 // !
 // UPDATE STOCK VIA PRODUCT SOLD
-func (x *Handlers) updateStockViaSold(c *gin.Context) {
+func (x *Handlers) updateStockAfterSale(c *gin.Context) {
 	var product ProductData
 	product.ProductID = c.Param("id")
 	err := c.BindJSON(&product)

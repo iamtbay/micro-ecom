@@ -41,14 +41,17 @@ func (x *ReviewHandler) GetProductReviewsByProductID(c *gin.Context) {
 // !
 // GET REVIEW BY ID
 func (x *ReviewHandler) GetReviewByID(c *gin.Context) {
+	cookie := c.Request.Header.Get("cookie")
 	reviewID := c.Param("id")
-	req, _ := http.NewRequest("GET", "", nil)
 
+	req, _ := http.NewRequest("GET", "", nil)
+	req.Header.Add("cookie", cookie)
 	serviceResp, err := forwardRequest(fmt.Sprintf("%v/%v", os.Getenv("REVIEWS_SERVICE_URL"), reviewID), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	
 	resp, err := io.ReadAll(serviceResp.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

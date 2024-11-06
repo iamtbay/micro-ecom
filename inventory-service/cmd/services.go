@@ -15,7 +15,18 @@ var repo = initRepository()
 // !
 // NEW PRODUCT STOCK
 func (x *Services) newProductStock(product Product) error {
-	err := repo.newProductStock(product)
+	var err error
+	isExist, err := repo.checkIsExist(product.ProductID)
+	if err != nil {
+		return err
+	}
+
+	if isExist {
+		err = repo.productReStock(product)
+	} else {
+		//sql
+		err = repo.newProductStock(product)
+	}
 	if err != nil {
 		return err
 	}

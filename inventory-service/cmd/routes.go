@@ -18,12 +18,12 @@ func initRoutes(r *gin.Engine) {
 	route := r.Group("/api/v1")
 
 	route.Use(cookieRequired())
-	route.GET("/:id", handlers.getStock)
+	route.GET("/:id", handlers.getProductStock)
 	route.POST("/new", handlers.newProductStock)
-	route.PATCH("/restock/:id", handlers.productReStock)
-	route.PATCH("/cancel", handlers.cancelReservation)
-	route.PATCH("/reserved/:id", handlers.updateStockViaReserved)
-	route.PATCH("/sold/:id", handlers.updateStockViaSold)
+	route.PATCH("/restock/:id", handlers.restockProduct)
+	route.PATCH("/cancel/:id", handlers.cancelStockReservation)
+	route.PATCH("/reserved/:id", handlers.confirmStockReservation)
+	route.PATCH("/sold/:id", handlers.updateStockAfterSale)
 }
 
 func corsMW() gin.HandlerFunc {
@@ -71,7 +71,7 @@ func cookieRequired() gin.HandlerFunc {
 }
 
 func parseJWT(tokenString string) (uuid.UUID, error) {
-	token, err := jwt.ParseWithClaims(tokenString, jwtClaims{}, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {

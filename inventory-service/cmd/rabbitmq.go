@@ -11,11 +11,9 @@ import (
 func connectRabbitMQ() {
 	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
 	failOnErr("error while connecting", err)
-	fmt.Println("connected rabbitmq!")
 
 	ch, err := conn.Channel()
 	failOnErr("error while opening channel", err)
-	fmt.Println("channel opened!")
 
 	err = ch.ExchangeDeclare(
 		"inventory_exchange",
@@ -198,7 +196,7 @@ func consumeCheckMessage(ch *amqp091.Channel) {
 	for msg := range msgs {
 		stockAvailable, err := services.checkStock(string(msg.Body))
 		if err != nil {
-			log.Fatalf("Failed to consume checkstock messages: %s", err)
+			log.Fatalf("Failed to consume checkstock messages1: %s", err)
 		}
 
 		err = ch.Publish(

@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/rabbitmq/amqp091-go"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var ch *amqp091.Channel
@@ -104,4 +105,34 @@ func publishNewProduct(productInventory ProductInventoryType) error {
 	}
 	return nil
 
+}
+
+func publishNewProductIndex(productID primitive.ObjectID, product *NewProduct) error {
+
+	jsonData, err := json.Marshal(&GetProduct{
+		ID:      productID,
+		Name:    product.Name,
+		Brand:   product.Brand,
+		Content: product.Content,
+		Price:   product.Price,
+		AddedBy: product.AddedBy,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = ch.Publish(
+		"search_exchange",
+		"index.new",
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        jsonData,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }

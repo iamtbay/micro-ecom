@@ -5,6 +5,7 @@ ORDERS_SERVICE_DIR:= ../orders-service
 REVIEWS_SERVICE_DIR:= ../reviews-service
 BROKER_SERVICE_DIR:= ../broker-service
 INVENTORY_SERVICE_DIR:= ../inventory-service
+SEARCH_SERVICE_DIR:= ../search-service
 
 build: 
 	go build -o brokerService ./cmd/*.go
@@ -35,7 +36,11 @@ build_reviews_service:
 	@echo "Building reviews service..."
 	cd $(REVIEWS_SERVICE_DIR) && go build -o reviewsService cmd/*.go
 
-buildAll: build build_auth_service build_products_service build_cart_service build_orders_service build_reviews_service build_inventory_service
+build_search_service:
+	@echo "Building reviews service..."
+	cd $(SEARCH_SERVICE_DIR) && go build -o searchService cmd/*.go
+
+buildAll: build build_auth_service build_products_service build_cart_service build_orders_service build_reviews_service build_inventory_service build_search_service
 	@echo "All services built succesfully"
 
 # run
@@ -56,6 +61,9 @@ run_reviews_service:
 
 run_inventory_service:
 	cd $(INVENTORY_SERVICE_DIR) && ./inventoryService &
+
+run_search_service:
+	cd $(SEARCH_SERVICE_DIR) && ./searchService &
 
 stopAll:
 	-@pkill -f authService || true

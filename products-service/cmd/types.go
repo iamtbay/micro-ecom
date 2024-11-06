@@ -35,6 +35,7 @@ type GetProduct struct {
 	Price   float64            `json:"price" bson:"price"`
 	AddedBy uuid.UUID          `json:"added_by" bson:"added_by"`
 }
+
 type GetProductBSON struct {
 	ID      primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
 	Name    string             `json:"name" bson:"name"`

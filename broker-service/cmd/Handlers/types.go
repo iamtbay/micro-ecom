@@ -1,6 +1,7 @@
 package handlersPackage
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ type ProductData struct {
 	Brand    string    `json:"brand"`
 	Content  string    `json:"content"`
 	Price    float64   `json:"price"`
+	Stock    int       `json:"stock"`
 	Added_By uuid.UUID `json:"added_by"`
 }
 
@@ -68,4 +70,17 @@ type NewReview struct {
 	Surname string `json:"surname" bson:"surname"`
 	Point   int64  `json:"point" bson:"point"`
 	Comment string `json:"comment" bson:"comment"`
+}
+
+type InventoryProduct struct {
+	ID             uuid.UUID       `json:"id"`
+	ProductID      string          `json:"product_id"`
+	Properties     json.RawMessage `json:"properties"`
+	AvailableStock int64           `json:"available_stock"`
+	ReservedStock  int64           `json:"reserved_stock"`
+}
+
+type InventoryProductSale struct {
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
 }

@@ -142,7 +142,6 @@ func consumeMessages() {
 	}
 
 	go func() {
-		fmt.Println("listening for changes....")
 		for d := range msgs {
 			var product UpdateProductType
 			err := json.Unmarshal(d.Body, &product)

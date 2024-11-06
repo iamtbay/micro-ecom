@@ -56,10 +56,18 @@ func (x *Services) addProduct(newProduct *NewProduct) error {
 	if err != nil {
 		return err
 	}
-	publishNewProduct(ProductInventoryType{
+	err = publishNewProduct(ProductInventoryType{
 		ProductID: productID.Hex(),
 		Quantity:  newProduct.Stock,
 	})
+	if err != nil {
+		return err
+	}
+
+	err = publishNewProductIndex(productID, newProduct)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

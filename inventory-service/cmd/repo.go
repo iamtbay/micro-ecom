@@ -12,13 +12,38 @@ func initRepository() *Repository {
 }
 
 // !
+func (x *Repository) checkIsExist(productID string) (bool, error) {
+	var count int
+	//ctx
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	//
+	query := `SELECT COUNT(*) FROM inventory WHERE product_id=$1`
+
+	cursor, err := conn.Query(ctx, query, productID)
+	if err != nil {
+		return false, err
+	}
+
+	for cursor.Next() {
+		err := cursor.Scan(&count)
+		if err != nil {
+			return false, err
+		}
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// !
 // NEW PRODUCT STOCK
 func (x *Repository) newProductStock(product Product) error {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
-
-	//sql
+	//
 	query := `INSERT INTO 
 			inventory(product_id,properties,available_stock) 
 			VALUES($1,$2,$3)`
@@ -27,7 +52,6 @@ func (x *Repository) newProductStock(product Product) error {
 		return err
 	}
 	return nil
-
 }
 
 // !

@@ -20,3 +20,5 @@ notification-service/notificationService
 
 inventory-service/inventoryService
 inventory-service/.env
+
+search-service/searchService

@@ -79,8 +79,18 @@ func initRoutes(r *gin.Engine) {
 	route.GET("/reviews/:id", reviewHandler.GetProductReviewsByProductID)
 	route.POST("/reviews/:id", cookieRequired(), reviewHandler.NewReview)
 
-	route.GET("/review/:id", reviewHandler.GetReviewByID)
+	route.GET("/review/:id", cookieRequired(), reviewHandler.GetReviewByID)
 	route.PATCH("/review/:id", cookieRequired(), reviewHandler.EditReviewByReviewID)
 	route.DELETE("/review/:id", cookieRequired(), reviewHandler.DeleteReviewByReviewID)
 
+	//inventory
+	inventoryHandler := handlersPackage.InitInventoryHandlers()
+	inventoryRoute := route.Group("/inventory")
+	inventoryRoute.Use(cookieRequired())
+	inventoryRoute.GET("/:id", inventoryHandler.GetProductStock)
+	inventoryRoute.POST("/new", inventoryHandler.AddNewProductStock)
+	inventoryRoute.PATCH("/restock/:id", inventoryHandler.RestockProduct)
+	inventoryRoute.PATCH("/cancel/:id", inventoryHandler.CancelStockReservation)
+	inventoryRoute.PATCH("/reserved/:id", inventoryHandler.ConfirmStockReservation)
+	inventoryRoute.PATCH("/sold/:id", inventoryHandler.UpdateStockAfterSale)
 }
