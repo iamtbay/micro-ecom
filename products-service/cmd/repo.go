@@ -21,7 +21,7 @@ func initRepository() *Repository {
 	return &Repository{}
 }
 
-var itemsPerPage int64 = 10
+var itemsPerPage int64 = 12
 
 // GET PRODUCTS
 func (x *Repository) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {

@@ -39,7 +39,7 @@ func (x *Handlers) check(c *gin.Context) {
 	})
 }
 
-//!
+// !
 // LOGIN
 func (x *Handlers) login(c *gin.Context) {
 	var userInfo UserBasicInfo
@@ -77,7 +77,7 @@ func (x *Handlers) login(c *gin.Context) {
 
 }
 
-//!
+// !
 // SIGNUP
 func (x *Handlers) signup(c *gin.Context) {
 	var userInfos UserBasicInfo
@@ -110,7 +110,7 @@ func (x *Handlers) signup(c *gin.Context) {
 	})
 }
 
-//!
+// !
 // EDIT
 func (x *Handlers) edit(c *gin.Context) {
 	var userInfos UserBasicInfo
@@ -135,7 +135,7 @@ func (x *Handlers) edit(c *gin.Context) {
 	//service req
 	err = services.edit(userInfos, token)
 	if err != nil {
-		c.JSON(401, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
@@ -151,7 +151,7 @@ func (x *Handlers) edit(c *gin.Context) {
 	})
 }
 
-//!
+// !
 // CHANGE PASSWORD
 func (x *Handlers) changePassword(c *gin.Context) {
 	token, _ := getCookie(c)
@@ -182,7 +182,7 @@ func (x *Handlers) changePassword(c *gin.Context) {
 	})
 }
 
-//!
+// !
 // DELETE
 func (x *Handlers) delete(c *gin.Context) {
 	//get cookie

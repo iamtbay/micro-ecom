@@ -39,7 +39,7 @@ func (x *Repository) getAllOrdersByUserID(userID uuid.UUID) ([]*Order, error) {
 	defer cancel()
 
 	//query
-	query := `SELECT * FROM orders WHERE user_id=$1 AND is_active=TRUE`
+	query := `SELECT * FROM orders WHERE user_id=$1 AND is_active=TRUE ORDER BY order_date DESC`
 	rows, err := conn.Query(ctx, query, userID)
 
 	if err != nil {
@@ -59,21 +59,22 @@ func (x *Repository) getAllOrdersByUserID(userID uuid.UUID) ([]*Order, error) {
 
 // !
 // NEW ORDER
-func (x *Repository) newOrder(order Order, productsJson []byte) error {
+func (x *Repository) newOrder(order Order, productsJson []byte) (uuid.UUID, error) {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	//
+	var newOrderID uuid.UUID
 	query := `INSERT INTO orders(user_id,products,shipping_adress_id,total_price)
-			VALUES($1,$2,$3,$4)
+			VALUES($1,$2,$3,$4) RETURNING id
 			`
-	_, err := conn.Exec(ctx, query, order.CustomerID, productsJson, order.AddressID, order.TotalPrice)
+	err := conn.QueryRow(ctx, query, order.CustomerID, productsJson, order.AddressID, order.TotalPrice).Scan(&newOrderID)
 	if err != nil {
-		return err
+		return uuid.UUID{}, err
 	}
 
-	return nil
+	return newOrderID, nil
 }
 
 // !

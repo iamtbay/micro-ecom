@@ -15,6 +15,6 @@ func main() {
 
 	initRoutes(r)
 
-	//start tv
-	r.Run()
+	//start
+	r.Run(":8080")
 }

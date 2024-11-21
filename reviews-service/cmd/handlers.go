@@ -27,6 +27,7 @@ func (x *Handlers) GetProductReviewsByProductID(c *gin.Context) {
 		})
 		return
 	}
+	
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    reviews,

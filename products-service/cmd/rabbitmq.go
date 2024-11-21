@@ -103,6 +103,7 @@ func publishNewProduct(productInventory ProductInventoryType) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Product added rabbitMQ")
 	return nil
 
 }

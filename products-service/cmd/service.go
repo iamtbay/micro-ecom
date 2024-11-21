@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -23,7 +22,6 @@ var repo = initRepository()
 func (x *Services) getProducts(page int64) ([]*GetProduct, *PageInfo, error) {
 	products, pageInfos, err := repo.getProducts(page)
 	if err != nil {
-		fmt.Println(page)
 		return []*GetProduct{}, &PageInfo{}, err
 	}
 	return products, pageInfos, nil

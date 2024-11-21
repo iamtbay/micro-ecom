@@ -37,7 +37,6 @@ func consumeMessages(ch *amqp.Channel) {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received message %s", d.Body)
 			var orderCart Order
 			err := json.Unmarshal([]byte(d.Body), &orderCart)
 			if err != nil {

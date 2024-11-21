@@ -172,6 +172,7 @@ func (x *CartHandler) CheckOut(c *gin.Context) {
 	cookie := c.Request.Header.Get("cookie")
 
 	//
+
 	var addressID CartCheckOutType
 	err := c.BindJSON(&addressID)
 	if err != nil {

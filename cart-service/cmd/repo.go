@@ -70,7 +70,7 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 	if exists == 0 {
 		err = rdb.HSet(ctx,
 			fmt.Sprintf(
-			"cart:%s:%s", userID.String(), product.ProductID.Hex()),
+				"cart:%s:%s", userID.String(), product.ProductID.Hex()),
 			"name", product.Name,
 			"quantity", product.Quantity,
 			"price", product.Price,
@@ -96,6 +96,20 @@ func (x *Repository) addToCart(userID uuid.UUID, product CartItem) error {
 // todo shorten it
 // !
 // UPDATE QUANTITY OF PRODUCT
+func (x *Repository) findProductQuantityOnUserCart(userID uuid.UUID, productID string) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	//
+	key := fmt.Sprintf("cart:%s:%s", userID, productID)
+	//get product quantitiy from cart
+	productQuantity, err := getProductQuantity(ctx, key)
+	if err != nil {
+		return 0, err
+	}
+	return productQuantity, nil
+}
+
 func (x *Repository) updateQuantityOfProduct(userID uuid.UUID, productID string, quantity int, isExact bool) (string, int, error) {
 	//ctx
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
@@ -231,7 +245,6 @@ func setExactQuantity(ctx context.Context, key string, quantity int, productQuan
 	return "quantity arranged", quantity - productQuantity, nil
 }
 
-//
 func updateQuantity(ctx context.Context, key string, quantity, productQuantity int) (string, int, error) {
 	switch {
 	case quantity == -1 && productQuantity <= 1:

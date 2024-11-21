@@ -50,19 +50,19 @@ func (x *Services) getAllOrdersByUserID(userID string) ([]*Order, error) {
 
 // !
 // NEW ORDER
-func (x *Services) newOrder(order Order) (any, error) {
+func (x *Services) newOrder(order Order) (uuid.UUID, error) {
 	productsJson, err := json.Marshal(order.Products)
 	if err != nil {
-		return "", err
+		return uuid.UUID{}, err
 	}
 
 	//repo
-	err = repo.newOrder(order, productsJson)
+	orderID, err := repo.newOrder(order, productsJson)
 	if err != nil {
-		return "", err
+		return uuid.UUID{}, err
 	}
 
-	return "", nil
+	return orderID, nil
 }
 
 // !

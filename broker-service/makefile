@@ -65,6 +65,9 @@ run_inventory_service:
 run_search_service:
 	cd $(SEARCH_SERVICE_DIR) && ./searchService &
 
+run_broker_service:
+	./brokerService &
+
 stopAll:
 	-@pkill -f authService || true
 	-@pkill -f productsService || true
@@ -75,5 +78,5 @@ stopAll:
 	-@pkill -f inventoryService || true
 	@echo "All services stopped"
 
-runAll: stopAll run_auth_service run_products_service run_cart_service run_orders_service run_reviews_service run_inventory_service run
+runAll: stopAll run_auth_service run_products_service run_cart_service run_orders_service run_reviews_service run_inventory_service run_broker_service
 	@echo "All services running"

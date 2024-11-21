@@ -13,7 +13,7 @@ func initRoutes(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		fmt.Println("origin", origin)
-		if origin == "http://localhost:5173" || origin == "http://127.0.0.1:5173" || origin == "http://localhost:8080" {
+		if origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" || origin == "http://127.0.0.1:5173" || origin == "http://localhost:8080" {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		}
 

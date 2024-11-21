@@ -126,7 +126,7 @@ func (x *AuthHandlers) Signup(c *gin.Context) {
 		return
 	}
 
-	c.Data(http.StatusCreated, serviceResp.Header.Get("Content-Type"), respBody)
+	c.Data(serviceResp.StatusCode, serviceResp.Header.Get("Content-Type"), respBody)
 }
 
 // !
@@ -174,7 +174,7 @@ func (x *AuthHandlers) Edit(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response from service"})
 		return
 	}
-	c.Data(http.StatusOK, serviceResp.Header.Get("Content-Type"), respBody)
+	c.Data(serviceResp.StatusCode, serviceResp.Header.Get("Content-Type"), respBody)
 }
 
 // !
@@ -218,7 +218,7 @@ func (x *AuthHandlers) ChangePassword(c *gin.Context) {
 		return
 	}
 	// forward the response
-	c.Data(http.StatusOK, serviceResp.Header.Get("Content-Type"), resp)
+	c.Data(serviceResp.StatusCode, serviceResp.Header.Get("Content-Type"), resp)
 }
 
 // !

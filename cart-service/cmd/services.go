@@ -71,22 +71,29 @@ func (x *Services) checkOut(userID uuid.UUID, addressID uuid.UUID) error {
 	return nil
 }
 
-// !
-// ADD TO CART
-func (x *Services) addToCart(userID uuid.UUID, product CartItem) error {
-	//check product is available?
-	stockStr, err := createTemporaryQueue(ch, product.ProductID.Hex())
+func (x *Services) checkAvailableStock(productID string, quantity int) error {
+	stockStr, err := createTemporaryQueue(ch, productID)
 	if err != nil {
 		return err
 	}
-
 	stock, err := strconv.Atoi(stockStr)
 	if err != nil {
 		return err
 	}
 
-	if product.Quantity > stock {
+	if quantity > stock {
 		return fmt.Errorf("only %v items in stock", stock)
+	}
+	return nil
+}
+
+// !
+// ADD TO CART
+func (x *Services) addToCart(userID uuid.UUID, product CartItem) error {
+	//check product is available?
+	err := services.checkAvailableStock(product.ProductID.Hex(), product.Quantity)
+	if err != nil {
+		return err
 	}
 
 	err = repo.addToCart(userID, product)
@@ -105,14 +112,37 @@ func (x *Services) addToCart(userID uuid.UUID, product CartItem) error {
 	return nil
 }
 
+func (x *Services) findProductQuantityOnUserCart(userID uuid.UUID, productID string) (int, error) {
+	return repo.findProductQuantityOnUserCart(userID, productID)
+
+}
+
 func (x *Services) updateQuantityOfProduct(userID uuid.UUID, productID string, quantity string, isExact bool) (string, error) {
 	productQuantity, err := strconv.Atoi(quantity)
+	fmt.Println("prod quantity", productQuantity)
 	if err != nil {
 		return "", err
 	}
 
 	if productQuantity < 1 && isExact {
 		return "", errors.New("minimum quantity should be 1")
+	}
+
+	//how much quantit has user cart find the difference and create query for this.
+	if isExact {
+		cartQuantity, err := x.findProductQuantityOnUserCart(userID, productID)
+		if err != nil {
+			return "", err
+		}
+		err = services.checkAvailableStock(productID, productQuantity-cartQuantity)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err = services.checkAvailableStock(productID, productQuantity)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	msg, diff, err := repo.updateQuantityOfProduct(userID, productID, productQuantity, isExact)

@@ -150,9 +150,8 @@ func (x *Handlers) updateQuantityOfProduct(c *gin.Context) {
 	}
 	msg, err := services.updateQuantityOfProduct(userID, productID, quantity, isExact.SetExact)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
-			"message":"Error while reading product.",
 		})
 		return
 	}
@@ -169,7 +168,7 @@ func (x *Handlers) updateQuantityOfProduct(c *gin.Context) {
 func (x *Handlers) deleteProductOnCart(c *gin.Context) {
 	// check cookie
 	userID, _ := isCookieValid(c)
-	
+
 	// check item id
 	productID := c.Param("id")
 
@@ -177,8 +176,8 @@ func (x *Handlers) deleteProductOnCart(c *gin.Context) {
 	err := services.deleteProductOnCart(userID, productID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-			"message":"Error while deleting product from cart",
+			"error":   err.Error(),
+			"message": "Error while deleting product from cart",
 		})
 		return
 	}
