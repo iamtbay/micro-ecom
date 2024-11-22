@@ -93,4 +93,12 @@ func initRoutes(r *gin.Engine) {
 	inventoryRoute.PATCH("/cancel/:id", inventoryHandler.CancelStockReservation)
 	inventoryRoute.PATCH("/reserved/:id", inventoryHandler.ConfirmStockReservation)
 	inventoryRoute.PATCH("/sold/:id", inventoryHandler.UpdateStockAfterSale)
+
+	//favorites
+	favoriteHandler := handlersPackage.InitFavoriteHandler()
+	favoriteRoute := route.Group("/favorites")
+	favoriteRoute.Use(cookieRequired())
+	favoriteRoute.GET("", favoriteHandler.GetFavoriteList)
+	favoriteRoute.POST("/:id", favoriteHandler.AddToFavoriteList)
+	favoriteRoute.DELETE("/:id", favoriteHandler.RemoveFromFavoriteList)
 }

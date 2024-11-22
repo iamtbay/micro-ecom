@@ -22,3 +22,6 @@ inventory-service/inventoryService
 inventory-service/.env
 
 search-service/searchService
+
+favorite-service/.env
+favorite-service/favoriteService
