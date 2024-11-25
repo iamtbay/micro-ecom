@@ -6,6 +6,7 @@ orders-service/ordersAddressesService
 
 products-service/.env
 products-service/productsService
+products-service/images/
 
 cart-service/.env
 cart-service/cartService
@@ -25,3 +26,4 @@ search-service/searchService
 
 favorite-service/.env
 favorite-service/favoriteService
+.
