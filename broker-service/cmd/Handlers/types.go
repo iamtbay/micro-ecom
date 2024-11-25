@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuthChangePassword struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
 type AuthRequest struct {
 	Email       string `json:"email"`
 	Name        string `json:"name"`
@@ -24,6 +29,7 @@ type ProductData struct {
 	Content  string    `json:"content"`
 	Price    float64   `json:"price"`
 	Stock    int       `json:"stock"`
+	Images   []string  `json:"images"`
 	Added_By uuid.UUID `json:"added_by"`
 }
 

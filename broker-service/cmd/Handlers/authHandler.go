@@ -181,7 +181,7 @@ func (x *AuthHandlers) Edit(c *gin.Context) {
 // CHANGE-PASSWORD
 func (x *AuthHandlers) ChangePassword(c *gin.Context) {
 	// turn json
-	var data AuthRequest
+	var data AuthChangePassword
 	err := c.BindJSON(&data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

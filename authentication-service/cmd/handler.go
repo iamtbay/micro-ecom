@@ -156,7 +156,7 @@ func (x *Handlers) edit(c *gin.Context) {
 func (x *Handlers) changePassword(c *gin.Context) {
 	token, _ := getCookie(c)
 
-	var newPassword NewPassword
+	var newPassword ChangePassword
 	err := c.BindJSON(&newPassword)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -167,7 +167,7 @@ func (x *Handlers) changePassword(c *gin.Context) {
 	}
 
 	//service req
-	err = services.changePassword(newPassword.Password, token)
+	err = services.changePassword(newPassword, token)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error":   err.Error(),
@@ -176,7 +176,7 @@ func (x *Handlers) changePassword(c *gin.Context) {
 		return
 	}
 	//RETURN RESPONSE
-	c.JSON(http.StatusNoContent, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "User password changed",
 		"data":    nil,
 	})

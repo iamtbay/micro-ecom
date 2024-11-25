@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Services struct {
@@ -42,32 +43,50 @@ func (x *Services) getSingleProduct(id string) (*GetProduct, error) {
 }
 
 // !
+// ADD IMAGE
+func (x *Services) addImages(images []string, productID primitive.ObjectID) error {
+	err := repo.addImages(images, productID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// !
 // ADD PRODUCT
-func (x *Services) addProduct(newProduct *NewProduct) error {
+func (x *Services) addProduct(newProduct *NewProduct) (*GetProduct, error) {
 
 	err := x.checkCredentials(newProduct)
 	if err != nil {
-		return err
+		return &GetProduct{}, err
 	}
 	productID, err := repo.addProduct(newProduct)
 
 	if err != nil {
-		return err
+		return &GetProduct{}, err
 	}
 	err = publishNewProduct(ProductInventoryType{
 		ProductID: productID.Hex(),
 		Quantity:  newProduct.Stock,
 	})
 	if err != nil {
-		return err
+		return &GetProduct{}, err
 	}
 
 	err = publishNewProductIndex(productID, newProduct)
 	if err != nil {
-		return err
+		return &GetProduct{}, err
 	}
 
-	return nil
+	return &GetProduct{
+		ID:      productID,
+		Name:    newProduct.Name,
+		Brand:   newProduct.Brand,
+		Content: newProduct.Content,
+		Price:   newProduct.Price,
+		Images:  newProduct.Images,
+		AddedBy: newProduct.AddedBy,
+	}, nil
 }
 
 // !

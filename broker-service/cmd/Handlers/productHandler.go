@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -79,6 +81,75 @@ func (x *ProductHandlers) GetProductByID(c *gin.Context) {
 	}
 	c.Data(serviceResp.StatusCode, serviceResp.Header.Get("Content-Type"), resp)
 
+}
+
+// !
+// add images
+func (x *ProductHandlers) AddImages(c *gin.Context) {
+	//
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	files := form.File["images"]
+	x.sendFilesToProductService(files, c)
+
+}
+
+func (x *ProductHandlers) sendFilesToProductService(files []*multipart.FileHeader, c *gin.Context) error {
+	productID := c.Param("id")
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for _, file := range files {
+		srcFile, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open file %v", err)
+		}
+		defer srcFile.Close()
+
+		//
+		part, err := writer.CreateFormFile("images", filepath.Base(file.Filename))
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(part, srcFile)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	err := writer.Close()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", fmt.Sprintf("%v/image/add/%v", os.Getenv("PRODUCT_SERVICE_URL"), productID), body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Add("cookie", c.Request.Header.Get("cookie"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respI, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respI)
+	fmt.Println("Images uploaded!")
+	return nil
 }
 
 // !

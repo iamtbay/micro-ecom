@@ -47,6 +47,7 @@ func initRoutes(r *gin.Engine) {
 	route.GET("/products", productHandlers.GetAllProducts)
 	route.GET("/product/:id", productHandlers.GetProductByID)
 	route.POST("/product/add", cookieRequired(), productHandlers.AddProduct)
+	route.POST("/product/image/add/:id", cookieRequired(), productHandlers.AddImages)
 	route.PATCH("/product/:id", cookieRequired(), productHandlers.EditProduct)
 	route.DELETE("/product/:id", cookieRequired(), productHandlers.DeleteProduct)
 

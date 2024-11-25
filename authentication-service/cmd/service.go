@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Services struct{}
@@ -130,15 +131,25 @@ func (x *Services) edit(userInfo UserBasicInfo, token string) error {
 }
 
 // CHANGE PASSWORD SERVICE
-func (x *Services) changePassword(newPassword string, token string) error {
+func (x *Services) changePassword(changePassword ChangePassword, token string) error {
 	//parse jwt and check email is equal or not?
 	userID, err := parseJWT(token)
 	if err != nil {
 		return err
 	}
 
+	//check old pass is true
+	userInfoDB, err := repo.getUserInfoDB(userID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(userInfoDB.Password)
+	if !isPasswordCorrect(userInfoDB.Password, changePassword.CurrentPassword) {
+		return errors.New("Password is incorrect")
+	}
+
 	//hash password
-	newPassword, err = hashPassword(newPassword)
+	newPassword, err := hashPassword(changePassword.NewPassword)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"time"
@@ -158,7 +159,28 @@ func (x *Repository) editProduct(id primitive.ObjectID, newProductInfo *NewProdu
 		return err
 	}
 	return nil
+}
 
+// !
+func (x *Repository) addImages(images []string, productID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	filter := bson.M{
+		"_id": productID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"images": images,
+		},
+	}
+	err := collection.FindOneAndUpdate(ctx, filter, update).Err()
+	fmt.Println(err)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // !
@@ -239,6 +261,7 @@ func (x *Repository) convertProductBSONtoJSON(product *GetProductBSON) (*GetProd
 		Brand:   product.Brand,
 		Content: product.Content,
 		Price:   product.Price,
+		Images:  product.Images,
 		AddedBy: userIDFromBinary,
 	}, nil
 }

@@ -9,6 +9,7 @@ import (
 func initRoutes(r *gin.Engine) {
 
 	//cors
+	r.MaxMultipartMemory = 4 << 20
 	r.Use(corsMW())
 
 	route := r.Group("/api/v1")
@@ -21,6 +22,7 @@ func initRoutes(r *gin.Engine) {
 
 	route.GET("", handlers.getProducts)
 	route.POST("/add", cookieCheck(), handlers.addProduct)
+	route.POST("/image/add/:id", cookieCheck(), handlers.addImages)
 }
 
 func corsMW() gin.HandlerFunc {
